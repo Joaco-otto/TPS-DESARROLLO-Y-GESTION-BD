@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio - 3</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        /* Contenedor general */
+        .contenedor {
+            width: 950px;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Header */
+        .header {
+            height: 150px;
+            background-color: #2c2c2c;
+            /* gris oscuro */
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Nav */
+        .nav {
+            height: 30px;
+            background-color: #ff2d68;
+            /* fucsia fuerte */
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main con 2 columnas */
+        .main {
+            display: flex;
+            height: 350px;
+        }
+
+        /* Aside - columna izquierda */
+        .aside {
+            width: 30%;
+            background-color: #f4a7b9;
+            /* rosa claro */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Contenido principal - columna derecha */
+        .contenido {
+            width: 70%;
+            background-color: #a0a0a0;
+            /* gris claro */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Footer */
+        .footer {
+            height: 25px;
+            background-color: #666;
+            /* gris oscuro */
+            color: white;
+            text-align: center;
+            font-size: 12px;
+            line-height: 25px;
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <div class="contenedor">
+        <header class="header">Encabezado</header>
+
+        <nav class="nav">Navegación</nav>
+
+        <main class="main">
+            <aside class="aside">Lateral</aside>
+            <section class="contenido">Contenido Principal</section>
+        </main>
+
+        <footer class="footer">Pie de Página</footer>
+    </div>
+
+
+</body>
+
+</html>

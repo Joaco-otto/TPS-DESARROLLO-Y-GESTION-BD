@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>- ejercicio 6 -</title>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+  }
+
+  p {
+    color: purple;
+    font-weight: bold;
+  }
+
+  a {
+    color: blue;
+    text-decoration: none;
+    display: block;
+    margin: 5px 0;
+    cursor: pointer;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  #mensaje {
+    background-color: yellow;
+    font-weight: bold;
+    padding: 5px;
+    display: none; /* Oculto al inicio */
+  }
+    </style>
+</head>
+<body>
+
+    <p>Antes:</p>
+<a id="accion" onmouseover="mostrarYcambiar()">Mostrar Div</a>
+
+<p>después:</p>
+<a id="accion2" onmouseover="mostrarYcambiar()">Mostrar Div</a>
+<div id="mensaje">Texto Fantasma!!</div>
+
+<script>
+  let mostrando = false; // estado inicial
+
+  function mostrarYcambiar() {
+    const enlace = document.getElementById("accion2");
+    const mensaje = document.getElementById("mensaje");
+
+    if (!mostrando) {
+      // Mostrar el texto y cambiar a "Ocultar Div"
+      mensaje.style.display = "inline-block";
+      enlace.textContent = "Ocultar Div";
+      mostrando = true;
+    } else {
+      // Ocultar el texto y volver a "Mostrar Div"
+      mensaje.style.display = "none";
+      enlace.textContent = "Mostrar Div";
+      mostrando = false;
+    }
+  }
+</script>
+    
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio -7</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+      body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #fff;
+    }
+
+    .contenedor {
+      width: 600px;
+      height: 400px;
+      margin: 40px auto;
+      border: 1px solid #000;
+      position: relative;
+      overflow: hidden; /* evita que se salga la imagen */
+    }
+
+    /* La imagen va ENCIMA del texto */
+    .contenedor img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.7; /* controla la transparencia de la imagen */
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2; /* está por encima del texto */
+    }
+
+    /* El texto está detrás de la imagen */
+    .texto {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 20px;
+      color: orange;
+      font-size: 14px;
+      text-align: justify;
+      z-index: 1; /* debajo de la imagen */
+    }
+  </style>
+    </style>
+</head>
+
+<body>
+
+        <div class="contenedor">
+            <div class="texto">
+                <p>
+                    La naranja es una fruta cítrica comestible obtenida del naranjo dulce (<i>Citrus × sinensis</i>),
+                    árbol híbrido del asiático originario de India, Vietnam o el sureste de China. Es un hesperidio
+                    carnoso de cubierta más o menos gruesa y endurecida, y su pulpa está formada típicamente por once
+                    gajos llenos de jugo, el cual contiene mucha vitamina C, flavonoides y aceites esenciales.
+                    <br><br>
+                    Es más pequeña y dulce que el pomelo o toronja, más grande, aunque menos perfumada que la mandarina.
+                    Existen muchas variedades de naranjas, siendo la mayoría híbridos producidos a partir de las
+                    especies <i>Citrus reticulata</i> (mandarina) y <i>Citrus medica</i> (cidro).
+                </p>
+            </div>
+            <!-- Imagen encima del texto -->
+             <img src="imagenes/naranja.jpg.jpg" alt="Naranja">
+        </div>
+    </body>
+
+    </html>
+
+</body>
+
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>-EJERCICIO - 4</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: blue;
+            display: block;
+            margin: 5px 0;
+        }
+
+        .info-box {
+            background-color: yellow;
+            padding: 10px;
+            width: 250px;
+            margin-top: 10px;
+        }
+
+        .contenedor {
+            display: inline-block;
+            margin-right: 50px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="contenedor">
+        <a href="#" onmouseover="mostrarTexto('informacion de ayuda')" onmouseout="mostrarTexto('Otro texto')">Info</a>
+        <a href="#" onmouseover="mostrarTexto('Más detalles sobre el tema')" onmouseout="mostrarTexto('Otro texto')">Mas
+            Info</a>
+        <a href="#" onmouseover="mostrarTexto('Mucha mas información disponible')"
+            onmouseout="mostrarTexto('Otro texto')">Mucha mas Info</a>
+
+        <div id="mensaje" class="info-box">Otro texto</div>
+    </div>
+
+    <div class="contenedor">
+        <a href="#" onmouseover="mostrarTexto2('informacion de ayuda')"
+            onmouseout="mostrarTexto2('Otro texto!')">Info</a>
+        <a href="#" onmouseover="mostrarTexto2('Más detalles sobre el tema')"
+            onmouseout="mostrarTexto2('Otro texto!')">Mas Info</a>
+        <a href="#" onmouseover="mostrarTexto2('Mucha mas información disponible')"
+            onmouseout="mostrarTexto2('Otro texto!')">Mucha mas Info</a>
+
+        <div id="mensaje2" class="info-box">Otro texto!</div>
+    </div>
+
+    <script>
+        function mostrarTexto(texto) {
+            document.getElementById("mensaje").innerText = texto;
+        }
+
+        function mostrarTexto2(texto) {
+            document.getElementById("mensaje2").innerText = texto;
+        }
+    </script>
+
+
+</body>
+
+</html>

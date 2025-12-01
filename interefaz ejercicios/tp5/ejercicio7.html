@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio- 7 </title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 100px;
+            background-color: #f9f9f9;
+        }
+
+        h2 {
+            color: purple;
+        }
+
+        #reloj {
+            font-size: 40px;
+            font-weight: bold;
+            color: blue;
+            background-color: yellow;
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body onload="iniciarReloj()">
+    <h2>Hora actual:</h2>
+    <div id="reloj"></div>
+
+    <script>
+        function mostrarHora() {
+            const reloj = new Date(); // Obtiene la hora actual
+            let horas = reloj.getHours();
+            let minutos = reloj.getMinutes();
+            let segundos = reloj.getSeconds();
+
+            // Formatear para que siempre tengan dos dígitos (ej: 09:03:05)
+            if (horas < 10) horas = "0" + horas;
+            if (minutos < 10) minutos = "0" + minutos;
+            if (segundos < 10) segundos = "0" + segundos;
+
+            // Mostrar en el div
+            document.getElementById("reloj").innerText = `${horas}:${minutos}:${segundos}`;
+        }
+
+        function iniciarReloj() {
+            mostrarHora(); // Mostrar inmediatamente al cargar
+            window.setInterval('mostrarHora()', 1000); // Actualizar cada segundo
+        }
+    </script>
+
+
+
+</body>
+
+</html>

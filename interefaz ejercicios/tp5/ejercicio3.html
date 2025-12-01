@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>- EJERCICIO 3 - </title>
+    <Style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        ul {
+            list-style-type: disc;
+        }
+
+        a {
+            text-decoration: none;
+            color: blue;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        img {
+            width: 300px;
+            margin-top: 20px;
+            display: block;
+        }
+    </Style>
+</head>
+
+<body>
+    <h3>Ejercicio 3</h3>
+    <p>Pasa el cursor sobre cada pestaña para ver una imagen diferente:</p>
+
+    <ul>
+        <li><a href="#" onmouseover="mostrarImagen('imagenes/bichon-frise.webp')" onmouseout="ocultarImagen()">Pestaña
+                1</a></li>
+        <li><a href="#" onmouseover="mostrarImagen('imagenes/golden-retriever.webp')"
+                onmouseout="ocultarImagen()">Pestaña 2</a></li>
+        <li><a href="#" onmouseover="mostrarImagen('imagenes/poodle-caniche.webp')" onmouseout="ocultarImagen()">Pestaña
+                3</a></li>
+    </ul>
+
+    <img id="imagen" src="" alt="Imagen" style="display:none;">
+
+    <script>
+        // Función para mostrar la imagen según el enlace
+        function mostrarImagen(ruta) {
+            const img = document.getElementById("imagen");
+            img.src = ruta;
+            img.style.display = "block";
+        }
+
+        // Función para ocultarla cuando se quita el cursor
+        function ocultarImagen() {
+            const img = document.getElementById("imagen");
+            img.style.display = "none";
+        }
+    </script>
+
+</body>
+
+</html>

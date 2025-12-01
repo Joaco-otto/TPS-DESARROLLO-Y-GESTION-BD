@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>- Ejercicio - 2</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 60%;
+            margin: 20px;
+        }
+
+        td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Efecto al pasar el mouse por encima de una fila */
+        tr:hover {
+            background-color: blue;
+            color: white;
+        }
+
+        /* Clase que se aplicará al hacer clic */
+        .selected {
+            background-color: red !important;
+            color: white;
+        }
+
+        p {
+            color: purple;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <p>Ejercicio- 2 :</p>
+    <table id="tabla">
+        <tr>
+            <td>Texto</td>
+            <td>Texto</td>
+            <td>Texto</td>
+            <td>Texto</td>
+        </tr>
+        <tr>
+            <td>Texto</td>
+            <td>Texto</td>
+            <td>Texto</td>
+            <td>Texto</td>
+        </tr>
+    </table>
+
+    <script>
+        // Obtener la primera fila de la tabla
+        const primeraFila = document.querySelector("#tabla tr:first-child");
+
+        // Agregar evento click a cada celda de esa fila
+        primeraFila.querySelectorAll("td").forEach(celda => {
+            celda.addEventListener("click", () => {
+                // Quitar color de todas las celdas antes de aplicar a una
+                primeraFila.querySelectorAll("td").forEach(td => td.classList.remove("selected"));
+                // Aplicar color rojo solo a la celda clickeada
+                celda.classList.add("selected");
+            });
+        });
+    </script>
+</body>
+
+</html>

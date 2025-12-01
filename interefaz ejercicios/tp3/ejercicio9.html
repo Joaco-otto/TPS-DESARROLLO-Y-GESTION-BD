@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio - 9</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f7931e;
+            /* fondo naranja */
+        }
+
+        .contenedor {
+            width: 900px;
+            margin: 20px auto;
+            background-color: #fff;
+            box-shadow: 0 0 10px #555;
+        }
+
+        /* === HEADER === */
+        header {
+            background: linear-gradient(to bottom, #d9d9d9, #999);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .logo h1 {
+            color: #333;
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .logo span {
+            color: #ff6600;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        nav ul li {
+            margin-left: 20px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+        }
+
+        nav ul li a:hover {
+            color: #ff6600;
+        }
+
+        /* === BANNER === */
+        .banner img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        /* === SECCIONES PRINCIPALES === */
+        main {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .quienes,
+        .novedades {
+            width: 45%;
+        }
+
+        h2 {
+            color: #ff6600;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .quienes img {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        /* === SECCIÓN CLIENTES === */
+        .clientes {
+            display: flex;
+            justify-content: space-between;
+            background-color: #666;
+            color: white;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        .clientes h3 {
+            color: #ffcc00;
+            margin-top: 0;
+        }
+
+        .casos ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .casos li {
+            margin-bottom: 5px;
+        }
+
+        /* === FOOTER === */
+        footer {
+            background-color: #333;
+            color: #ccc;
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="contenedor">
+
+    <!-- ENCABEZADO -->
+    <header>
+      <div class="logo">
+        <img src="imagenes/logo.ciclo.png" alt="LogoSite">
+        <h1>Logo<span>Site</span></h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#">Empresa</a></li>
+          <li><a href="#">Servicios</a></li>
+          <li><a href="#">Casos de Éxito</a></li>
+          <li><a href="#">Tecnologías</a></li>
+          <li><a href="#">Contacto</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- IMAGEN PRINCIPAL -->
+    <section class="banner">
+      <img src="imagenes/imagenprincipal.ciclo.png" alt="Banner principal">
+    </section>
+
+    <!-- SECCIONES PRINCIPALES -->
+    <main>
+      <section class="quienes">
+        <h2>QUIÉNES SOMOS</h2>
+        <img src="imagenes/personas.ciclo.png" alt="Equipo de trabajo">
+        <p>
+          Nuestra misión consiste en colaborar en la adopción de las mejores estrategias tecnológicas para su empresa.
+          Acompañamos el crecimiento de nuestros clientes con soluciones innovadoras, efectivas y de alta calidad.
+        </p>
+      </section>
+
+      <section class="novedades">
+        <h2>NOVEDADES</h2>
+        <p>
+          Habla de una visita a la Feria de Computación en España, y de un convenio con una empresa de software líder
+          en el sector. También se mencionan nuevas alianzas estratégicas para ofrecer más servicios a nuestros clientes.
+        </p>
+        <p>
+          Nuestro equipo continúa con proyectos de desarrollo e implementación de plataformas tecnológicas personalizadas.
+        </p>
+      </section>
+    </main>
+
+    <!-- SECCIÓN INFERIOR -->
+    <section class="clientes">
+      <div class="opiniones">
+        <h3>ALGUNOS DE NUESTROS CLIENTES DICEN</h3>
+        <p><strong>Microsoft webTV:</strong> "La experiencia con LogoSite ha sido excelente. Su trabajo fue clave para nuestro crecimiento."</p>
+      </div>
+      <div class="casos">
+        <h3>CLIENTES :: CASOS DE ÉXITO</h3>
+        <ul>
+          <li>NEXWEB</li>
+          <li>PULP</li>
+          <li>EIRPORT</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- PIE DE PÁGINA -->
+    <footer>
+      <p>copyright 2025 — www.logosite.com — Todos los derechos reservados</p>
+      <p>diseño by ECO</p>
+    </footer>
+
+  </div>
+
+
+</body>
+
+</html>

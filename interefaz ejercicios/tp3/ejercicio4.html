@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio - 4</title>
+    <link rel="stylesheet" href="estilos.css">
+
+    <style>
+        /* Estructura general */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+        }
+
+        .contenedor {
+            width: 950px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            height: 150px;
+            background-color: #2c2c2c;
+            color: #ff2d68;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+        }
+
+        /* Navegación principal */
+        .nav-principal {
+            height: 30px;
+            background-color: #ff2d68;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-principal ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-principal li a {
+            color: #2c2c2c;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Main */
+        .main {
+            display: flex;
+            height: 350px;
+        }
+
+        /* Barra izquierda */
+        .barra-izquierda {
+            width: 20%;
+            background-color: #f4a7b9;
+            padding: 20px;
+        }
+
+        .barra-izquierda ul {
+            list-style: disc;
+            color: #2c2c2c;
+        }
+
+        /* Contenido central */
+        .contenido-central {
+            width: 50%;
+            background-color: #e0e0e0;
+            padding: 20px;
+            border: 1px dashed #333;
+        }
+
+        .contenido-central h2 {
+            color: #ff2d68;
+            margin-bottom: 10px;
+        }
+
+        /* Noticias (barra derecha) */
+        .barra-derecha {
+            width: 30%;
+            background-color: #bfbfbf;
+            padding: 20px;
+        }
+
+        .barra-derecha h3 {
+            color: #ff2d68;
+            margin-bottom: 10px;
+        }
+
+        .barra-derecha h4 {
+            color: #2c2c2c;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .barra-derecha p {
+            font-size: 10px;
+            color: #333;
+        }   
+
+        /* Footer */
+        .footer {
+            height: 25px;
+            background-color: #666;
+            color: white;
+            text-align: left ;
+            font-size: 12px;
+            line-height: 25px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="contenedor">
+        <header class="header">
+            <h1>WEB SITE 2.0</h1>
+        </header>
+
+        <nav class="nav-principal">
+            <ul>
+                <li><a href="#">HOME</a></li>
+                <li><a href="#">EMPRESA</a></li>
+                <li><a href="#">SERVICIOS</a></li>
+                <li><a href="#">CLIENTES</a></li>
+                <li><a href="#">CONTACTO</a></li>
+            </ul>
+        </nav>
+
+        <main class="main">
+            <!-- Barra lateral izquierda -->
+            <aside class="barra-izquierda">
+                <ul>
+                    <li>Misión</li>
+                    <li>Visión</li>
+                    <li>Valores</li>
+                    <li>Staff</li>
+                </ul>
+            </aside>
+
+            <!-- Contenido central -->
+            <section class="contenido-central">
+                <h2>Historia de nuestra empresa</h2>
+                <p>This week's victims are among at least 110 people killed in the U.S. by tornadoes this year, putting
+                    2024 on track to be one of the deadliest years in recent history. This year also ranks high in total
+                    number of twisters. But experts caution against reading too much into those statistics</p>
+
+                <p>This week's victims are among at least 110 people killed in the U.S. by tornadoes this year, putting
+                    2024 on track to be one of the deadliest years in recent history. This year also ranks high in total
+                    number of twisters. But experts caution against reading too much into those statistics</p>
+            </section>
+
+            <!-- Noticias destacadas -->
+            <aside class="barra-derecha">
+                <h3>Noticias destacadas</h3>
+
+                <h4>Título de la noticia 1</h4>
+                <p>This week's victims are among at least 110 people killed in the U.S. by tornadoes this year, putting
+                    2024 on track to be one.</p>
+
+                <h4>Título de la noticia 2</h4>
+                <p>This week's victims are among at least 110 people killed in the U.S. by tornadoes this year, putting
+                    2024 on track to be one.</p>
+
+                <h4>Título de la noticia 3</h4>
+                <p>This week's victims are among at least 110 people killed in the U.S. by tornadoes this year, putting
+                    2024 on track to be one.</p>
+            </aside>
+        </main>
+
+        <footer class="footer">
+            2024 :: Todos los derechos reservados
+        </footer>
+    </div>
+
+</body>
+
+</html>
