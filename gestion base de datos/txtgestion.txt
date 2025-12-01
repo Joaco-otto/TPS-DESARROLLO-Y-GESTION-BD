@@ -1,0 +1,43 @@
+Gestion base de datos :
+- extension en visual
+mysql data base client 
+mysql managment tool
+
+queryes:
+
+truncate para redondear decimales.
+AVG para calcular promedios de una columna
+OUTER JOIN cuando hay una negacion en la consulta
+GROUP BY se usa cuando se tiene un campo y 
+seguidamente una funcion de agregacion MAX MIN AVG
+
+Star Uml --> herramienta para realizar LAS GRAFICAS DE  UML
+
+DATA:
+✅ Recomendación de orden para aprender
+
+HTML + CSS → aprende a crear páginas lindas y bien estructuradas.
+
+JavaScript (básico) → lógica, eventos, funciones, manipulación del DOM.
+
+JavaScript (avanzado) → promesas, fetch, asincronía, ES6+.
+
+Backend (con Node.js, Python, PHP, etc.)
+
+Bases de datos → aprende SQL o MongoDB según lo que uses.
+
+Conectar frontend con backend (APIs)
+
+Deploy: subir tu app a la web (ej. con Netlify, Vercel, Render, etc.)
+
+🧠 Bonus: Tu experiencia con POO
+
+Gracias a lo que aprendiste en Programación Orientada a Objetos, ya conocés conceptos como:
+
+Clases, objetos
+
+Herencia, polimorfismo, encapsulamiento
+
+Métodos, atributos
+
+Lógica general de programación
