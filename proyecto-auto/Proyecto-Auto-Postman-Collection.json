@@ -1,0 +1,316 @@
+{
+	"info": {
+		"_postman_id": "auto-proyecto-collection-2024",
+		"name": "Proyecto Auto - Spring Boot API (Simplificado)",
+		"description": "Colección de Postman para probar la API REST del proyecto Auto con Spring Boot, JPA e Hibernate. Entidad simplificada con solo: ID, Marca y Precio",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autos CRUD Operations",
+			"item": [
+				{
+					"name": "GET - Obtener todos los autos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/autos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos"
+							]
+						},
+						"description": "Obtiene la lista completa de todos los autos registrados en la base de datos"
+					},
+					"response": []
+				},
+				{
+					"name": "GET - Obtener auto por ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/autos/{{auto_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos",
+								"{{auto_id}}"
+							]
+						},
+						"description": "Obtiene un auto específico por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "POST - Crear nuevo auto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"marca\": \"Toyota\",\n    \"precio\": 25000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/autos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos"
+							]
+						},
+						"description": "Crea un nuevo auto en la base de datos"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT - Actualizar auto existente",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"marca\": \"Honda\",\n    \"precio\": 28000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/autos/{{auto_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos",
+								"{{auto_id}}"
+							]
+						},
+						"description": "Actualiza un auto existente por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Eliminar auto",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/autos/{{auto_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos",
+								"{{auto_id}}"
+							]
+						},
+						"description": "Elimina un auto de la base de datos por su ID"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Consultas Específicas",
+			"item": [
+				{
+					"name": "GET - Buscar autos por rango de precio",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/autos/precio?min={{precio_min}}&max={{precio_max}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos",
+								"precio"
+							],
+							"query": [
+								{
+									"key": "min",
+									"value": "{{precio_min}}",
+									"description": "Precio mínimo del rango de búsqueda"
+								},
+								{
+									"key": "max",
+									"value": "{{precio_max}}",
+									"description": "Precio máximo del rango de búsqueda"
+								}
+							]
+						},
+						"description": "Busca autos dentro de un rango específico de precios"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Ejemplos con datos de prueba",
+			"item": [
+				{
+					"name": "POST - Crear auto Ford Focus",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"marca\": \"Ford\",\n    \"precio\": 22000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/autos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST - Crear auto Chevrolet Cruze",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"marca\": \"Chevrolet\",\n    \"precio\": 24500.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/autos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST - Crear auto Volkswagen Vento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"marca\": \"Volkswagen\",\n    \"precio\": 26000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/autos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"autos"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "auto_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "precio_min",
+			"value": "20000",
+			"type": "string"
+		},
+		{
+			"key": "precio_max",
+			"value": "30000",
+			"type": "string"
+		}
+	]
+}

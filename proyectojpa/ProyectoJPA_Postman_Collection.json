@@ -1,0 +1,328 @@
+{
+  "info": {
+    "name": "Proyecto JPA - Personas API",
+    "description": "Colección de Postman para el proyecto Spring Boot JPA con PostgreSQL - Gestión de Personas",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Personas CRUD",
+      "item": [
+        {
+          "name": "1. Obtener todas las personas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personas/traer",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "traer"]
+            },
+            "description": "Obtiene la lista completa de todas las personas registradas en la base de datos."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Crear nueva persona",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"edad\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personas/crear",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "crear"]
+            },
+            "description": "Crea una nueva persona en la base de datos. El ID se genera automáticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Eliminar persona por ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personas/borrar/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "borrar", "1"]
+            },
+            "description": "Elimina una persona específica de la base de datos usando su ID. Cambiar el '1' por el ID deseado."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Actualizar persona por ID",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personas/editar/1?id=1&nombre=Juan Carlos&edad=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "editar", "1"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "Nuevo ID (opcional)"
+                },
+                {
+                  "key": "nombre",
+                  "value": "Juan Carlos",
+                  "description": "Nuevo nombre (opcional)"
+                },
+                {
+                  "key": "edad",
+                  "value": "30",
+                  "description": "Nueva edad (opcional)"
+                }
+              ]
+            },
+            "description": "Actualiza una persona existente. Todos los parámetros son opcionales. Cambiar el '1' en la URL por el ID a editar."
+          },
+          "response": []
+        }
+      ],
+      "description": "Operaciones CRUD (Crear, Leer, Actualizar, Eliminar) para la entidad Persona"
+    },
+    {
+      "name": "Ejemplos de uso",
+      "item": [
+        {
+          "name": "Ejemplo: Crear persona - María",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"María García\",\n  \"edad\": 28\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personas/crear",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "crear"]
+            },
+            "description": "Ejemplo de creación de persona con nombre 'María García' y edad 28"
+          },
+          "response": []
+        },
+        {
+          "name": "Ejemplo: Crear persona - Carlos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos López\",\n  \"edad\": 35\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personas/crear",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "crear"]
+            },
+            "description": "Ejemplo de creación de persona con nombre 'Carlos López' y edad 35"
+          },
+          "response": []
+        },
+        {
+          "name": "Ejemplo: Actualizar solo nombre",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personas/editar/1?nombre=Juan Carlos Modificado",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "editar", "1"],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "Juan Carlos Modificado",
+                  "description": "Solo modificar el nombre"
+                }
+              ]
+            },
+            "description": "Ejemplo de actualización de solo el nombre de una persona"
+          },
+          "response": []
+        },
+        {
+          "name": "Ejemplo: Actualizar solo edad",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personas/editar/1?edad=40",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "editar", "1"],
+              "query": [
+                {
+                  "key": "edad",
+                  "value": "40",
+                  "description": "Solo modificar la edad"
+                }
+              ]
+            },
+            "description": "Ejemplo de actualización de solo la edad de una persona"
+          },
+          "response": []
+        }
+      ],
+      "description": "Ejemplos prácticos de uso de la API con datos de muestra"
+    },
+    {
+      "name": "Tests y Validaciones",
+      "item": [
+        {
+          "name": "Test: Verificar servidor activo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personas/traer",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "traer"]
+            },
+            "description": "Verifica que el servidor esté activo y respondiendo correctamente"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Servidor está activo\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Respuesta es un array\", function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Test: Crear y verificar persona",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Test Usuario\",\n  \"edad\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personas/crear",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "crear"]
+            },
+            "description": "Crea una persona de prueba y verifica la respuesta"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Persona creada exitosamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Mensaje de confirmación correcto\", function () {",
+                  "    pm.expect(pm.response.text()).to.include(\"creada correctamente\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "Casos de prueba automatizados para validar el funcionamiento de la API"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script que se ejecuta antes de cada request",
+          "console.log('Ejecutando request a: ' + pm.request.url);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script que se ejecuta después de cada request",
+          "console.log('Response status: ' + pm.response.status);",
+          "console.log('Response time: ' + pm.response.responseTime + 'ms');"
+        ]
+      }
+    }
+  ]
+}

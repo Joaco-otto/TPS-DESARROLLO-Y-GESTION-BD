@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Auto - Documentación Técnica</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .section {
+            background: white;
+            margin-bottom: 2rem;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .section h3 {
+            color: #764ba2;
+            margin-bottom: 0.8rem;
+            margin-top: 1.5rem;
+            font-size: 1.4rem;
+        }
+        
+        .section h4 {
+            color: #555;
+            margin-bottom: 0.6rem;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .layer {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .layer:hover {
+            transform: translateY(-5px);
+        }
+        
+        .layer h4 {
+            color: white;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .layer ul {
+            list-style: none;
+            text-align: left;
+        }
+        
+        .layer li {
+            margin-bottom: 0.5rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .flow-diagram {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        
+        .flow-step {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            margin: 0.5rem;
+            border-radius: 25px;
+            font-weight: bold;
+            position: relative;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .flow-step:after {
+            content: "→";
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            color: #667eea;
+        }
+        
+        .flow-step:last-child:after {
+            display: none;
+        }
+        
+        .method-card {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 5px solid #ff6b6b;
+        }
+        
+        .method-card h4 {
+            color: #d63031;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .validation-rule {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.8rem 0;
+            border-left: 4px solid #fdcb6e;
+        }
+        
+        .validation-rule h5 {
+            color: #fdcb6e;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 0.8rem 0;
+            overflow-x: auto;
+            border: 1px solid #4a5568;
+        }
+        
+        .entity-structure {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        
+        .entity-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            background: white;
+            margin: 0.5rem 0;
+            border-radius: 5px;
+            border-left: 4px solid #00cec9;
+        }
+        
+        .field-name {
+            font-weight: bold;
+            color: #2d3436;
+        }
+        
+        .field-type {
+            color: #636e72;
+            font-family: monospace;
+            background: #f1f2f6;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+        }
+        
+        .business-rules {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .business-rule {
+            background: white;
+            padding: 1rem;
+            margin: 0.8rem 0;
+            border-radius: 8px;
+            border-left: 4px solid #e17055;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .warning {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .tech-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .endpoint {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            font-family: monospace;
+        }
+        
+        .method-get { border-left: 4px solid #28a745; }
+        .method-post { border-left: 4px solid #007bff; }
+        .method-put { border-left: 4px solid #ffc107; }
+        .method-delete { border-left: 4px solid #dc3545; }
+        
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 0.8rem;
+            margin: 0.8rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .architecture-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .flow-step {
+                display: block;
+                margin-bottom: 1rem;
+            }
+            
+            .flow-step:after {
+                content: "↓";
+                position: static;
+                display: block;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Proyecto Auto - Spring Boot</h1>
+            <p>Documentación Técnica Completa - API REST con JPA, Hibernate y DTO</p>
+            <p><strong>Entidad Simplificada:</strong> ID, Marca, Precio</p>
+        </div>
+
+        <div class="section">
+            <h2>🏗️ Arquitectura del Proyecto</h2>
+            <div class="architecture-grid">
+                <div class="layer">
+                    <h4>Controller Layer</h4>
+                    <ul>
+                        <li>AutoController.java</li>
+                        <li>Endpoints REST</li>
+                        <li>Validación HTTP</li>
+                        <li>Serialización JSON</li>
+                    </ul>
+                </div>
+                <div class="layer">
+                    <h4>Service Layer</h4>
+                    <ul>
+                        <li>IAutoService.java</li>
+                        <li>AutoService.java</li>
+                        <li>Lógica de Negocio</li>
+                        <li>Reglas de Validación</li>
+                    </ul>
+                </div>
+                <div class="layer">
+                    <h4>Repository Layer</h4>
+                    <ul>
+                        <li>IAutoRepository.java</li>
+                        <li>Spring Data JPA</li>
+                        <li>Method Queries</li>
+                        <li>Acceso a BD</li>
+                    </ul>
+                </div>
+                <div class="layer">
+                    <h4>Model & DTO</h4>
+                    <ul>
+                        <li>Auto.java (Entity)</li>
+                        <li>AutoRequestDTO.java</li>
+                        <li>AutoMapper.java</li>
+                        <li>Validaciones</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔄 Flujo de Datos en la Aplicación</h2>
+            <div class="flow-diagram">
+                <div class="flow-step">Cliente HTTP</div>
+                <div class="flow-step">AutoController</div>
+                <div class="flow-step">AutoService</div>
+                <div class="flow-step">IAutoRepository</div>
+                <div class="flow-step">Base de Datos</div>
+            </div>
+            
+            <h3>Proceso Detallado:</h3>
+            <ol>
+                <li><strong>Cliente envía request HTTP</strong> → JSON con datos del auto</li>
+                <li><strong>AutoController recibe</strong> → Convierte JSON a AutoRequestDTO</li>
+                <li><strong>Controller llama Service</strong> → Pasa el DTO al servicio</li>
+                <li><strong>AutoService aplica validaciones</strong> → Reglas de negocio</li>
+                <li><strong>Mapper convierte DTO → Entity</strong> → Auto entity</li>
+                <li><strong>Repository guarda en BD</strong> → Hibernate/JPA</li>
+                <li><strong>Respuesta inversa</strong> → Entity → JSON al cliente</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>🗄️ Estructura de la Entidad Auto</h2>
+            <div class="entity-structure">
+                <h3>Campos de la Entidad:</h3>
+                <div class="entity-field">
+                    <span class="field-name">id</span>
+                    <span class="field-type">Long (PK, Auto-generado)</span>
+                </div>
+                <div class="entity-field">
+                    <span class="field-name">marca</span>
+                    <span class="field-type">String (Not Null, Unique)</span>
+                </div>
+                <div class="entity-field">
+                    <span class="field-name">precio</span>
+                    <span class="field-type">Double (Not Null, >= 0)</span>
+                </div>
+            </div>
+
+            <div class="validation-rule">
+                <h5>🛡️ Validación en Entidad:</h5>
+                <p>El método <code>setPrecio()</code> valida que el precio no sea negativo. Si es negativo, lanza <code>IllegalArgumentException</code>.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 AutoService - Métodos y Reglas de Negocio</h2>
+            
+            <div class="method-card">
+                <h4>📋 1. getAutos() - Obtener todos los autos</h4>
+                <div class="code-block">
+public List&lt;Auto&gt; getAutos() {
+    return autoRepo.findAll();
+}</div>
+                <p><strong>Propósito:</strong> Retorna lista completa de autos desde la base de datos.</p>
+                <p><strong>Reglas:</strong> Ninguna validación especial, solo consulta directa.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>💾 2. saveAuto(AutoRequestDTO) - Crear nuevo auto</h4>
+                <div class="code-block">
+public Auto saveAuto(AutoRequestDTO autoDTO) {
+    // 1. Validar DTO
+    autoDTO.validar();
+    
+    // 2. Regla de negocio: marca única
+    validarMarcaUnica(autoDTO.getMarca());
+    
+    // 3. Convertir DTO a entidad
+    Auto auto = AutoMapper.toEntity(autoDTO);
+    
+    // 4. Guardar en BD
+    return autoRepo.save(auto);
+}</div>
+                
+                <div class="business-rules">
+                    <h4>📝 Reglas de Negocio Aplicadas:</h4>
+                    <div class="business-rule">
+                        <strong>1. Validación de DTO:</strong><br>
+                        • Marca no puede estar vacía<br>
+                        • Precio no puede ser negativo o null
+                    </div>
+                    <div class="business-rule">
+                        <strong>2. Marca Única:</strong><br>
+                        • No se permite duplicar marcas<br>
+                        • Utiliza <code>autoRepo.findByMarca(marca)</code><br>
+                        • Lanza excepción si ya existe
+                    </div>
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h4>🔍 3. findAuto(Long id) - Buscar auto por ID</h4>
+                <div class="code-block">
+public Auto findAuto(Long id) {
+    Optional&lt;Auto&gt; auto = autoRepo.findById(id);
+    if (auto.isPresent()) {
+        return auto.get();
+    }
+    throw new IllegalArgumentException("Auto no encontrado con ID: " + id);
+}</div>
+                
+                <div class="validation-rule">
+                    <h5>🛡️ Validación:</h5>
+                    <p>Si el ID no existe, lanza <code>IllegalArgumentException</code> con mensaje descriptivo.</p>
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h4>✏️ 4. editAuto(Long id, AutoRequestDTO) - Actualizar auto</h4>
+                <div class="code-block">
+public Auto editAuto(Long id, AutoRequestDTO autoDTO) {
+    // 1. Validar DTO
+    autoDTO.validar();
+    
+    // 2. Buscar auto existente
+    Optional&lt;Auto&gt; autoExistente = autoRepo.findById(id);
+    if (!autoExistente.isPresent()) {
+        throw new IllegalArgumentException("Auto no encontrado con ID: " + id);
+    }
+    
+    Auto auto = autoExistente.get();
+    
+    // 3. Validar marca única (solo si cambió)
+    if (!auto.getMarca().equals(autoDTO.getMarca())) {
+        validarMarcaUnica(autoDTO.getMarca());
+    }
+    
+    // 4. Actualizar entidad
+    AutoMapper.updateEntity(auto, autoDTO);
+    
+    // 5. Guardar cambios
+    return autoRepo.save(auto);
+}</div>
+                
+                <div class="business-rules">
+                    <h4>📝 Reglas de Negocio Complejas:</h4>
+                    <div class="business-rule">
+                        <strong>1. Validación de Existencia:</strong><br>
+                        • Verifica que el auto con ese ID exista<br>
+                        • Lanza excepción si no se encuentra
+                    </div>
+                    <div class="business-rule">
+                        <strong>2. Validación Inteligente de Marca:</strong><br>
+                        • Solo valida unicidad si la marca cambió<br>
+                        • Permite mantener la misma marca al actualizar otros campos<br>
+                        • Optimización de rendimiento
+                    </div>
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h4>🗑️ 5. deleteAuto(Long id) - Eliminar auto</h4>
+                <div class="code-block">
+public void deleteAuto(Long id) {
+    autoRepo.deleteById(id);
+}</div>
+                
+                <div class="warning">
+                    ⚠️ NOTA: No valida si el ID existe antes de eliminar. Spring Data JPA no lanza error si el ID no existe.
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h4>💰 6. getAutosByPrecioRange(Double min, Double max) - Buscar por precio</h4>
+                <div class="code-block">
+public List&lt;Auto&gt; getAutosByPrecioRange(Double precioMin, Double precioMax) {
+    return autoRepo.findByPrecioBetween(precioMin, precioMax);
+}</div>
+                
+                <div class="highlight">
+                    <strong>🔍 Method Query Utilizado:</strong> <code>findByPrecioBetween</code><br>
+                    Busca autos con precio entre el mínimo y máximo (inclusive).
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h4>🔒 7. validarMarcaUnica(String marca) - Regla privada</h4>
+                <div class="code-block">
+private void validarMarcaUnica(String marca) {
+    Optional&lt;Auto&gt; autoExistente = autoRepo.findByMarca(marca);
+    if (autoExistente.isPresent()) {
+        throw new IllegalArgumentException("Ya existe un auto con la marca: " + marca);
+    }
+}</div>
+                
+                <div class="validation-rule">
+                    <h5>🎯 Regla de Negocio Central:</h5>
+                    <p>Método privado que encapsula la lógica de validación de marca única. Es reutilizado en <code>saveAuto()</code> y <code>editAuto()</code>.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🌐 Endpoints de la API REST</h2>
+            
+            <div class="endpoint method-get">
+                <strong>GET</strong> /api/autos → Lista todos los autos
+            </div>
+            
+            <div class="endpoint method-get">
+                <strong>GET</strong> /api/autos/{id} → Obtiene auto específico
+            </div>
+            
+            <div class="endpoint method-post">
+                <strong>POST</strong> /api/autos → Crea nuevo auto
+            </div>
+            
+            <div class="endpoint method-put">
+                <strong>PUT</strong> /api/autos/{id} → Actualiza auto existente
+            </div>
+            
+            <div class="endpoint method-delete">
+                <strong>DELETE</strong> /api/autos/{id} → Elimina auto
+            </div>
+            
+            <div class="endpoint method-get">
+                <strong>GET</strong> /api/autos/precio?min={min}&max={max} → Busca por rango de precio
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Stack Tecnológico</h2>
+            <div class="tech-stack">
+                <div class="tech-item">Spring Boot 3.5.0</div>
+                <div class="tech-item">Java 21</div>
+                <div class="tech-item">Spring Data JPA</div>
+                <div class="tech-item">Hibernate ORM</div>
+                <div class="tech-item">MySQL Database</div>
+                <div class="tech-item">Lombok</div>
+                <div class="tech-item">Maven</div>
+                <div class="tech-item">DTO Pattern</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Resumen de Validaciones</h2>
+            
+            <h3>🔹 Validaciones en DTO (AutoRequestDTO.validar()):</h3>
+            <ul>
+                <li><strong>Marca:</strong> No puede ser null o vacía</li>
+                <li><strong>Precio:</strong> No puede ser null o negativo</li>
+            </ul>
+            
+            <h3>🔹 Validaciones en Entidad (Auto.setPrecio()):</h3>
+            <ul>
+                <li><strong>Precio:</strong> Validación adicional en el setter para prevenir valores negativos</li>
+            </ul>
+            
+            <h3>🔹 Reglas de Negocio en Servicio:</h3>
+            <ul>
+                <li><strong>Marca Única:</strong> No se permiten marcas duplicadas</li>
+                <li><strong>Existencia en Edición:</strong> Verifica que el auto existe antes de actualizar</li>
+                <li><strong>Validación Inteligente:</strong> Solo valida marca única si cambió en edición</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Conclusiones</h2>
+            
+            <div class="highlight">
+                <strong>🏆 Fortalezas del Diseño:</strong><br>
+                • Separación clara de responsabilidades por capas<br>
+                • Validaciones en múltiples niveles (DTO, Entity, Service)<br>
+                • Reutilización de código con métodos privados<br>
+                • Manejo consistente de excepciones<br>
+                • Uso efectivo de Spring Data JPA Method Queries
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Área de Mejora:</strong><br>
+                El método <code>deleteAuto()</code> podría validar la existencia del auto antes de eliminar para dar mejor feedback al usuario.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

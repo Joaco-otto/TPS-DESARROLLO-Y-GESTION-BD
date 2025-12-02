@@ -1,0 +1,6 @@
+ar\edu\centro8\desarrollo\proyectojpa\repository\IPersonaRepository.class
+ar\edu\centro8\desarrollo\proyectojpa\model\Persona.class
+ar\edu\centro8\desarrollo\proyectojpa\controller\PersonaController.class
+ar\edu\centro8\desarrollo\proyectojpa\ProyectojpaApplication.class
+ar\edu\centro8\desarrollo\proyectojpa\service\IPersonaService.class
+ar\edu\centro8\desarrollo\proyectojpa\service\PersonaService.class
