@@ -1,0 +1,40 @@
+package ar.edu.centro8.desarrollo.proyectoauto.frontend;
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Vehículos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>Gestión de Vehículos</h1>
+
+    <form id="formVehiculo">
+        <input type="text" id="marca" placeholder="Marca" required>
+        <input type="number" id="precio" placeholder="Precio" required>
+        <button type="submit">Guardar</button>
+    </form>
+
+    <hr>
+
+    <h2>Listado de Vehículos</h2>
+    <table id="tablaVehiculos">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Marca</th>
+                <th>Precio</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
