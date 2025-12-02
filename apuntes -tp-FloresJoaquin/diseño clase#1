@@ -1,0 +1,16 @@
+clase#1 Diseño Web
+Extensiones en visual:
+ - Extension pack for java
+ - Spring initializr java support:Genera proyectos Spring Boot directamente 
+   desde el editor Puedes crear un nuevo proyecto sin salir de VS Code,
+   eligiendo dependencias como Spring Web, JPA, Security, etc.
+creamos una carpeta nueva en la compu y en el visual abrimos esa carpeta, 
+luego hacemos CTRL + SHIFT +P Y ELEGIMOS create java project y elegimos la primera opion
+y ponemos nombre a nuestro proyecto generado directamente desde el editor.
+
+
+Creamos un paquete encapsulamiento y una clase auto , donde para el principio de encapsulamientp
+tenemos que definir los aributos en "private" despues se crea el cosntructor y ¿
+y generamos los getters y setters. para que este encapsulado.
+Asignamos la regla de negocio(es lo que yo quiero que la aplicacion haga if/else)
+

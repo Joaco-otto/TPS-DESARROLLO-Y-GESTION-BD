@@ -1,0 +1,6 @@
+ar\centro8\com\tp2\Tp2_FloresJoaquin\Tp2FloresJoaquinApplication.class
+ar\centro8\com\tp2\Tp2_FloresJoaquin\service\I_AutoService.class
+ar\centro8\com\tp2\Tp2_FloresJoaquin\controller\AutoController.class
+ar\centro8\com\tp2\Tp2_FloresJoaquin\repository\I_AutoRepository.class
+ar\centro8\com\tp2\Tp2_FloresJoaquin\service\AutoService.class
+ar\centro8\com\tp2\Tp2_FloresJoaquin\model\Auto.class

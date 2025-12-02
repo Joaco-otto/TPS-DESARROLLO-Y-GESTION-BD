@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Autos </title>
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-4">
+
+    <h2 class="text-center mb-4">Gestión de Autos</h2>
+
+    <!-- ALERTAS -->
+    <div th:if="${mensaje}" class="alert"
+         th:classappend="${tipoMensaje == 'ok'} ? ' alert-success' : ' alert-danger'"
+         th:text="${mensaje}"></div>
+
+    <!-- =============================================== -->
+    <!-- FORMULARIO PARA CREAR NUEVO AUTO                -->
+    <!-- =============================================== -->
+    <div th:if="${operacion == 'crear'}" class="card p-4">
+        <h4 class="text-center mb-3">Agregar Nuevo Auto</h4>
+
+        <form th:action="@{/autos/guardar}" method="post" th:object="${autoDTO}">
+            <label>Marca:</label>
+            <input type="text" class="form-control mb-3" th:field="*{marca}" placeholder="Marca">
+
+            <label>Precio:</label>
+            <input type="number" step="0.1" class="form-control mb-3" th:field="*{precio}" placeholder="0.0">
+
+            <button type="submit" class="btn btn-primary">Guardar Auto</button>
+            <a href="/" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+
+    <!-- =============================================== -->
+    <!-- FORMULARIO PARA EDITAR AUTO                     -->
+    <!-- =============================================== -->
+    <div th:if="${operacion == 'editar'}" class="card p-4 mt-4">
+        <h3 class="text-center">Editar Auto</h3>
+        <h5 class="text-center mb-3">Modificar Datos del Auto</h5>
+
+        <form th:action="@{'/autos/guardar/' + ${id}}" method="post" th:object="${autoDTO}">
+            <label>Marca:</label>
+            <input type="text" class="form-control mb-3" th:field="*{marca}">
+
+            <label>Precio:</label>
+            <input type="number" step="0.1" class="form-control mb-3" th:field="*{precio}">
+
+            <button class="btn btn-success">Actualizar Auto</button>
+            <a href="/" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+
+    <!-- =============================================== -->
+    <!-- TABLA DE AUTOS                                  -->
+    <!-- =============================================== -->
+    <div th:if="${operacion == 'listar'}" class="mt-4">
+
+        <a href="/autos/nuevo" class="btn btn-primary mb-3">Agregar Nuevo Auto</a>
+
+        <h4 class="mb-3">Lista de Autos</h4>
+
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Marca</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr th:each="auto : ${autos}">
+                    <td th:text="${auto.id}"></td>
+                    <td th:text="${auto.marca}"></td>
+                    <td th:text="${auto.precioConFormato()}"></td>
+
+                    <td>
+                        <a th:href="@{'/autos/editar/' + ${auto.id}}" class="btn btn-warning btn-sm">Editar</a>
+
+                        <form th:action="@{'/autos/borrar/' + ${auto.id}}" method="post" class="d-inline-block">
+                            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Total de registros: </strong> <span th:text="${totalRegistros}"></span></p>
+
+    </div>
+
+</div>
+</body>
+</html>

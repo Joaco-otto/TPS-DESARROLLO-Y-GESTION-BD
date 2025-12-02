@@ -1,0 +1,32 @@
+Interface grafica:
+java script: hace la peticion (request) hacia el backend ( el servidor) 
+MODELO CLIENTE SERVIDOR:
+BROSWER(NAVEGADOR)
+- CLIENTE : HTML5 , CSS(BOOSTRAP/TAILWIND/sass/less), JAVASCRIPT(JQUERY,React,React native,angular,VueJS)
+  El FRAMEWORK mas,usado es ReactJS Y EN LA PARTE MOBILE REACT NATIVE
+- Para el desarrolLo de back-end utilizamos fundamentalmente 
+  
+  java--> spring (boot/Data/cloud(para microservicios))
+  
+  Node js
+  Express js
+  Nest js
+
+  Python (Django/flask)
+
+- para poder comunicar dos servicios con distintas tegnologias se realiza mediante las APIS
+- un microservicio como ejemplo seria el carrito de compra que puede estar diseñado de forma independiente
+GESTORES DE BASE DE DATOS:
+- Mysql/Postgre-sql/Sqlite(h2)
+
+HTML
+index.html---> en nueva carpeta
+- head es lo que no se ve en la pantalla
+- viewport es lo que en la pantalla
+- title fundamental para los motores de busqueda
+- body es lo que se ve en la pantalla tiene el <h1> donde esta el titulo principal
+- <p> es el parrafo
+- <br> hace el salto de linea 
+Atajos:
+- copia linea de codigo (ALT+SHIFT+FLECHA ABAJO)
+- ajuste de linea(ALT+Z)
