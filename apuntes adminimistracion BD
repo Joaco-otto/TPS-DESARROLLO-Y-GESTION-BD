@@ -1,1 +1,34 @@
 
+Arquitectura de motor vs herramienta
+Arquitectura:
+ - El motor vs herramienta
+
+ TCP/IP es un conjunto de protocolos de comunicación que permite que los dispositivos en una red (computadoras, celulares, servidores, routers, etc.) se comuniquen entre sí y envíen datos. Es la base de funcionamiento de Internet y de muchas redes locales.
+
+- Gestión de memoria: buffer pool … cuando este se asfixia trabaja mas lento...RAM la necesitamos para todo por eso hay que configurar el max service memory asi no se devora la RAM  
+
+- Flujo de una consulta: cuando las consultas son las mismas la segunda es mas rápida por que ya esta cargada en la RAM
+
+-WAL : Primero se escribe y luego lo carga, la modificación se hace en la RAM
+-Check Point: proceso en segundo plano que que escribe las paginas sucias  de la memoria al disco 
+
+-ACID: El contrato de integridad de SQL server : atomicidad consistencia durabilidad y aislamiento
+- Anatomía Física:  MDF VS LDF
+MDF almacena tablas e índices 
+LDF almacena historial de transacciones
+idealmente ubicarlos en discos separados físicamente para evitar problemas cuellos de botella
+
+- Peligros con el log lleno: es importante limitar el espacio para poder evitar un log lleno(back-up) 
+                                       truncamiento de  logs, el bloqueo de la base de datos 
+
+-INSTALACION Y CONF DE SQL SERVER (instalar la versión developer)
+
+Instancias predeterminadas : son la instalaciones ya sean por defecto(default), por nombre(tienen puerto dinámico) , sql browser(utiliza port 1434 utiliza UDP) UDP ES para la conexión rápida.
+
+como modificar el puerto y asignar otra  "sql server 2022 configuración manager"
+
+- SQL Server network configurations 
+- protocols for MSSQLSERVER
+- TCP /IP 
+- IP ADRESSES 
+
