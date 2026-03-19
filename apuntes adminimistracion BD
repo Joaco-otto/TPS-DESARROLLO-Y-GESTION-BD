@@ -31,4 +31,32 @@ como modificar el puerto y asignar otra  "sql server 2022 configuración manager
 - protocols for MSSQLSERVER
 - TCP /IP 
 - IP ADRESSES 
+-- como ver el puerto para poder cambiarlo tanto para instancias por default como nombradas
+-- abrir SQL SERVER CONFIGURATION MANAGER--> sql server network configuration ->
+-- protocols for(nombre de instancia) --> TCP/IP --> IP ADDRESSES
+-- como saber el nombre del host de la pc--> CMD--> Hostname
+-- como saber el ip de la maquina--> CMD--> IPCONFIG-->IPV4
+
+-- Para averiguar si un puerto esta siendo usado o libre , ejecutar en CMD O PS:
+   netstat-ano|findstr:1433
+   Para leer el resultado: si no sale nada , el puerto esta libre .Nadie lo esta usando
+   Si sale una o mas líneas el puerto esta siendo ocupado
+  La ultima columna indica el PID(process ID) de quiene esta ocupando el puerto 
+ netstat -ano| findstr :1433 (respetar los espacios).Es el comando base para ver que pasa en la red de la pc
+-a -> indica  que queremos ver todas las conexiones y puertos de escucha, si no  lo ponemos nos va a mostrar las conexiones activas . pero oculta las conexiones que están esperando
+
+-n (numeric/numerico)--> indica que queremos los números de IP y que no los transforme a nombres 
+es mas rápido y exacto para identificar 
+-o (owner / propietario) --> indica el PID  del procesi que es dueño de  esa conexión
+| (pipe/tuberia) --> este símbolo agarra el resultado  de lo generado anteriormente y se lo pasa a la instrucción que sigue 
+
+findstr( find string/ buscar cadena) --> es un filtro , lo anterior busca un montón de líneas 
+  
+
+ 
+INSTANCIA : es la instalación de todos los servicios del motor que usa la base de datos para que la base de datos pueda ejecutar todo el procesamiento
+
+
+
+
 
