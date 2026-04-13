@@ -638,6 +638,41 @@ como 'sa' 50 veces)
 
 EXEC sp_readerrorlog;
 
+*** clase 9 
+/*
+Una instalación profesional no termina cuando el motor enciende. Termina cuando quedó 
+documentado y respaldado. Antes de entregar un servidor, siempre hay que generar un punto 
+cero. Es un concepto de buenas prácticas de administración.
+Es un en definitiva un backup full que hacemos inmediatamente después de terminar la
+instalación y configuración, antes de que nadie empiece a cargar datos reales. 
+Principalmente se hace de las bases del sistema, en especial de las bases master y msdb
+base master: contiene todos los logins, la configuración de los discos, la memoria y parámetros
+del servidor.
+base msdb: contiene las tareas programadas y configuraciones de backups.
+Un backup que nunca fue probado, es un backup hipotético.
+*/
+
+backup database master
+to disk = 'C:\Users\smata\Administración BD\backups\Msdb_PuntoCero.bak'
+with init, format, stats = 10;
+-- to disk: define la ruta, no debería utilizarse el disco C:
+-- with init: sobreescribe el archivo si ya existe, si no lo ponemos, agrega el backup al final del
+-- archivo anterior, creando un archivo cada vez más grande, inmanejable.
+-- format: asegura que el archivo tenga un encabezado limpio, es ideal para un backup inicial.
+-- stats=10 : muestra el progreso en la pestaña de mensajes (10%, 20%, etc) es un feedback visual.
+
+restore verifyonly from disk = 'C:\Users\smata\Administración BD\backups\Msdb_PuntoCero.bak';
+-- restore verifyonly: lee el archivo recién creado, verifica el checksum y confirma que es legible,
+-- sin intentar sobreescribir la base master real (lo cual nos daría error, porque está en uso).
+
+-- --------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 
 
