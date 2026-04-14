@@ -1,0 +1,70 @@
+===========================================
+HOJA DE INSTALACIÓN – SQL SERVER
+===========================================
+
+1. IDENTIDAD DEL SERVIDOR
+-------------------------------------------
+Fecha de Instalación:13/04/2026
+Servidor (Hostname):aula8-maquina9
+Instancia:"LAPTOP-5ADTBRD7"
+en SQL server poner la query 
+select @@servername;
+
+Versión del Motor:"Microsoft SQL Server 2022 (RTM) - 16.0.1000.6 (X64)   Oct  8 2022 05:58:25   Copyright (C) 2022 Microsoft Corporation  Developer Edition (64-bit) on Windows 10 Pro 10.0 <X64> (Build 26200: ) (Hypervisor) "
+query--> select @@versionname;
+
+Collation del Servidor: "Modern_Spanish_CI_AS"
+querys --> SELECT SERVERPROPERTY('Collation');
+IP del Servidor:
+Puerto TCP:
+
+2. RED Y SEGURIDAD
+-------------------------------------------
+Protocolo TCP/IP:       [HABILITADO / DESHABILITADO]
+Regla Firewall Windows: [CREADA / NO CREADA]
+Modo de Autenticación:  [Windows / Mixed]
+
+3. RECURSOS
+-------------------------------------------
+RAM Total Servidor:
+Max Server Memory:      
+
+4. ALMACENAMIENTO
+-------------------------------------------
+Ruta MDF:
+Tamaño Inicial MDF:
+Ruta LDF:
+Tamaño Inicial LDF:
+Ruta TempDB:
+Cantidad Archivos TempDB:
+Tamaño Inicial TempDB (cada uno):
+Autogrowth:            
+
+5. BASE DE DATOS PRINCIPAL
+-------------------------------------------
+Nombre Base:
+Recovery Model:
+Nivel de Compatibilidad:
+
+6. VALIDACIÓN TÉCNICA
+-------------------------------------------
+Servicio SQL:           
+Conexión SSMS (Local):  
+Test TCP (localhost):   
+Test TCP (IP Privada):  
+ErrorLog Revisado:      
+
+--- BASELINE INICIAL ---
+RAM SQL en reposo (MB):
+RAM Libre Sistema (MB):
+CPU en reposo (%):
+
+7. BACKUP INICIAL
+-------------------------------------------
+Backup Full Generado:   
+Ruta del Archivo:
+Verificación Realizada: 
+
+===========================================
+DBA Responsable:
+===========================================
