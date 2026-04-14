@@ -16,12 +16,19 @@ query--> select @@versionname;
 Collation del Servidor: "Modern_Spanish_CI_AS"
 querys --> SELECT SERVERPROPERTY('Collation');
 IP del Servidor:
-Puerto TCP:
+Dirección IPv4. . . . . . . . . . . .  : 192.168.10.7
+EN CMD--> IPCONFIG
+Es la dirección de red que identifica tu máquina dentro de la red
+
+Puerto TCP: canal por donde SQL Server recibe conexiones se puede conectar a base de datos por ahi desde otra pc o app externa
+1433--> por default
 
 2. RED Y SEGURIDAD
 -------------------------------------------
-Protocolo TCP/IP:       [HABILITADO / DESHABILITADO]
-Regla Firewall Windows: [CREADA / NO CREADA]
+Protocolo TCP/IP:  Permite conexiones remotas al servidor. Enable  [HABILITADO / DESHABILITADO]
+* SQL Server Network Configuration → Protocols for [instancia](si esta deshabilitado no pueden haber conexiones remotas)
+Regla Firewall Windows: [CREADA / NO CREADA]Permite que el puerto SQL (ej: 1433) no sea bloqueado por Windows.
+* wf.msc
 Modo de Autenticación:  [Windows / Mixed]
 
 3. RECURSOS
