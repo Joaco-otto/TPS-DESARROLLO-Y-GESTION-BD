@@ -6,57 +6,76 @@ HOJA DE INSTALACIÓN – SQL SERVER
 -------------------------------------------
 Fecha de Instalación:13/04/2026
 Servidor (Hostname):aula8-maquina9
+* CMD--> HOSTNAME 
 Instancia:"LAPTOP-5ADTBRD7"
-en SQL server poner la query 
-select @@servername;
+* en SQL server poner la query 
+  select @@servername;
 
 Versión del Motor:"Microsoft SQL Server 2022 (RTM) - 16.0.1000.6 (X64)   Oct  8 2022 05:58:25   Copyright (C) 2022 Microsoft Corporation  Developer Edition (64-bit) on Windows 10 Pro 10.0 <X64> (Build 26200: ) (Hypervisor) "
-query--> select @@versionname;
+* EN SQL SERVER QUERY
+query--> select @@version;
 
 Collation del Servidor: "Modern_Spanish_CI_AS"
+* EN SQL SERVER
 querys --> SELECT SERVERPROPERTY('Collation');
+ LA DOble @@ en sql server se utiliza para invocar funciones del sistema
+
 IP del Servidor:
-Dirección IPv4. . . . . . . . . . . .  : 192.168.10.7
+   Dirección IPv4. . . . . . . . . . . . . . : 192.168.20.156
 EN CMD--> IPCONFIG
 Es la dirección de red que identifica tu máquina dentro de la red
 
 Puerto TCP: canal por donde SQL Server recibe conexiones se puede conectar a base de datos por ahi desde otra pc o app externa
 1433--> por default
+* abrir SQL Server Configuration Manager -> SQL Server Network configuration ->
+-- Protocols for (nombre de la instancia) -> doble click sobre TCP/IP -> ver IPALL
+
 
 2. RED Y SEGURIDAD
 -------------------------------------------
-Protocolo TCP/IP:  Permite conexiones remotas al servidor. Enable  [HABILITADO / DESHABILITADO]
+Protocolo TCP/IP:  Permite conexiones remotas al servidor. Enable  [HABILITADO ]
 * SQL Server Network Configuration → Protocols for [instancia](si esta deshabilitado no pueden haber conexiones remotas)
-Regla Firewall Windows: [CREADA / NO CREADA]Permite que el puerto SQL (ej: 1433) no sea bloqueado por Windows.
-* wf.msc
-Modo de Autenticación:  [Windows / Mixed]
+
+Regla Firewall Windows: [CREADA] Permite que el puerto SQL (ej: 1433) no sea bloqueado por Windows.
+* windows+ defender firewal
+Modo de Autenticación:  [Mixed]
+
+* servidor(local) click derecho -->propiedades-->security-->sql and windows 
 
 3. RECURSOS
 -------------------------------------------
-RAM Total Servidor:
-Max Server Memory:      
+RAM Total Servidor: 7,8 gb (ctrl+shift+esc)-->rendimiento-->memoria
+Max Server Memory:    4096 mb 
 
 4. ALMACENAMIENTO
 -------------------------------------------
-Ruta MDF:
-Tamaño Inicial MDF:
-Ruta LDF:
-Tamaño Inicial LDF:
-Ruta TempDB:
-Cantidad Archivos TempDB:
-Tamaño Inicial TempDB (cada uno):
-Autogrowth:            
+EXEC SP_HELPFILE; --> AHI VEMOS TODOS LOS ARCHIVOS
+Ruta MDF: C:\Disco_de_datos
+Tamaño Inicial MDF:64MB
+Ruta LDF:C:\Disco_de_log
+Tamaño Inicial LDF:64MB
+Ruta TempDB:C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA
+Cantidad Archivos TempDB: 5 
+Tamaño Inicial TempDB (cada uno): 8 MB--> CADA UNO
+Autogrowth: 64MB--> Es la regla que indica cuánto crece cuando se llene el archivo
 
 5. BASE DE DATOS PRINCIPAL
 -------------------------------------------
-Nombre Base:
-Recovery Model:
-Nivel de Compatibilidad:
+Nombre Base: Laboratorio_SQL
+Recovery Model: FULL
+Nivel de Compatibilidad: 160
+*     select		name as BaseDeDatos,
+			compatibility_level AS NivelDeCompatibilidad,
+			recovery_model_desc as ModeloDeRecuperacion
+      from		sys.databases;
 
 6. VALIDACIÓN TÉCNICA
 -------------------------------------------
-Servicio SQL:           
-Conexión SSMS (Local):  
+Servicio SQL:    EN EJECUCION
+* WINDOWS + MSC + SERVICE + SQL SERVER (MSSQLSERVER)
+Conexión SSMS (Local): [ok] Desde powershell 
+* Test-NetConnection -ComputerName 192.168.20.156 -Port 1433 
+
 Test TCP (localhost):   
 Test TCP (IP Privada):  
 ErrorLog Revisado:      
@@ -70,7 +89,8 @@ CPU en reposo (%):
 -------------------------------------------
 Backup Full Generado:   
 Ruta del Archivo:
-Verificación Realizada: 
+Verificación Realizada:
+sql-->  restore verifyonly from disck="..."
 
 ===========================================
 DBA Responsable:
