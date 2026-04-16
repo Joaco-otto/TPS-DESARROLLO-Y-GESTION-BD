@@ -666,7 +666,9 @@ restore verifyonly from disk = 'C:\Users\smata\Administración BD\backups\Msdb_P
 -- sin intentar sobreescribir la base master real (lo cual nos daría error, porque está en uso).
 
 -- --------------------------------------------------------------------------------------
-
+DOCKER: - NECESITO TENER ACTIVADO EL WSL ESTO ME PERMITE QUE WINDOWS FUNCIONE CON LINUX , LA MAQUINA PROPIA DEBE ESTAR ACTIVADA LA VIRTUALIZACION
+EN ADMINISTRADOR DE TAREAS --> RENDIMINETO --> CPU --> VIRTUALIZACION --> HABILITADA 
+- DOCKER FUNCIONA CON DOS PUERTOS : UNO INTERNO Y OTRO LOCAL (1434 EJEMPLO UNO QUE NO ESTE USADO)
 
 
 
