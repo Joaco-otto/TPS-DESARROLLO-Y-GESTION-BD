@@ -665,7 +665,94 @@ restore verifyonly from disk = 'C:\Users\smata\Administración BD\backups\Msdb_P
 -- restore verifyonly: lee el archivo recién creado, verifica el checksum y confirma que es legible,
 -- sin intentar sobreescribir la base master real (lo cual nos daría error, porque está en uso).
 
+
 -- --------------------------------------------------------------------------------------
+CLASE N 10 
+-- Baseline de rendimiento
+-- Es una medición inicial del estado del servidor recién instalado  configurado.
+-- Sirve como referencia futura. Si no sabemos cómo estaba el servidor cuando estaba sano, después
+-- no tenemos con qué comparar.
+
+select
+		total_physical_memory_kb / 1024 as [RAM Total del servidor (MB)],
+-- esto toma el total de RAM física del servidor (viene en Kilobytes), lo dividimos por 1024
+-- para mostrarlo en Megabytes y que sea más legible
+		available_physical_memory_kb / 1024 as [RAM Libre del sistema (MB)],
+-- muestra cuánta RAM libre queda en el Sistema Operativo, si ese número es muy bajo, 
+-- Windows se va a poner lento.
+		system_memory_state_desc AS [Estado Salud Memoria]
+-- muestra una descripción en texto (High/Low)
+-- High = sobra memoria (estado saludable)
+-- Low = falta memoria (peligroso)
+from	sys.dm_os_sys_memory;
+-- consulta desde la vista del sistema que lee directamente del Sistema Operativo
+
+-- cuánto consume SQL Server
+select	physical_memory_in_use_kb / 1024 as [Consumo SQL (MB)]
+from	sys.dm_os_process_memory;
+-- esta vista del proceso lee internamente
+
+/*
+sp_helpfile
+Este es un procedimiento almacenado del sistema. Es un pequeño programa que ya viene hecho por Microsoft.
+Cuando se ejecuta devuelve una tabla, entre los principales datos podemos encontrar:
+- name: el nombre lógico (ej. master, tempdev). Es como SQL llama al archivo internamente.
+- filename: la ruta física en el disco rígido (ej. C:\...\master.mdf). Sirve para saber dónde están 
+guardados los archivos realmente.
+- size: el tamaño actual del archivo.
+Esta información debería quedar documentada.
+*/
+EXEC sp_helpfile;
+
+-- Al ejecutar esta query, si devuelve datos, el servicio corre y la conexión funciona
+select	
+		sqlserver_start_time AS [Hora de inicio],
+		datediff(minute, sqlserver_start_time, getdate()) AS [Minutos encendido],
+		@@servername AS [Nombre del Servidor]
+from	sys.dm_os_sys_info;
+
+-- Checklist profesional de entrega
+/*
+Instalar no es el final. Documentar es el final. Si mañana el servidor falla, el documento nos sirve
+para reflejar el punto inicial. Puerto, memoria, modelo de recuperación, rutas de archivos, etc.
+Un DBA no confía en su memoria, confía en su documentación.
+Al documento que se genera al final de una instalación se lo suele llamar "Operational Handover",
+"Pase a Operaciones" u "Hoja de Instalación".
+*/
+-------------------------------------------------------------------------------------------------------------
+CLASE N 11
+-- comando en docker:
+-- docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Password123!" -p 1435:1433 --name sql_server -d mcr.microsoft.com/mssql/server:2022-latest
+
+-e, -p son opciones, lo que se conoce como flags o parámetros de línea de comandos
+-e -> opción para definir una variable de entorno. Una variable de entorno es una forma de pasar
+información a un programa desde afuera, sin modificar el programa mismo. Esto permite que el mismo
+software se comporte de forma distinta dependiendo de lo que diga la variable.
+-p -> opción para publicar/mapear los puertos
+"ACCEPT_EULA=Y" (End-User License Agreement = Acuerdo de licencia de usuario final) Es una variable
+de entorno obligatoria por legales de Microsoft. Si no ponemos esto, el contenedor arranca pero
+imprime un mensaje diciendo que no aceptaste los términos y se muere en 1 segundo.
+"MSSQL_SA_PASSWORD" el usuario administrativo del sistema (sa) en SQL Server viene bloqueado por 
+defecto en Linux/Docker a menos que se le pase una clave. Se requiere un mínimo de 8 caracteres y al
+menos 3 de las siguientes características: mayúsculas, minúsculas, números y símbolos.
+-p 1435:1433 -p significa publish, el valor se lee: host:contenedor. El puerto de la derecha es 
+inamovible (SQL Server siempre escucha en el 1433 por dentro). El puerto de la izquierda es el que se
+exponer en Windows.
+--name sql_server si no le ponemos un nombre, Docker le inventa uno aleatorio. Ponerle un nombre fijo
+es vital para luego poder correr comandos de docker de manera simple sin estar buscando el ID.
+-d (detached) significa que ejecuta en segundo plano y devuelve el control de la consola. Si no ponemos
+-d la consola quedará trabada mostrando los logs de SQL. Eso significaría que si cerramos esa ventana,
+eliminaríamos al contenedor.
+MSSQL_PID=Developer muchas veces se suele agregar esta variable de entorno que indica el Product ID, 
+que es la edición de SQL Server que el motor debe activar internamente al arrancar. Define licenciamiento
+(express, developer, standard, entrerprise). Developer es el valor por defecto en la imagen de Docker,
+por eso no se suele agregar en entornos de desarrollo o práctica. LLeva el nombre de la versión o si
+la empresa tiene una licencia específica, se coloca el código.
+
+docker ps -> es para ver el estado de docker y sus contenedores en ejecución
+netstat -ano | findstr :1435 comando para ver si un puerto está ocupado en el host (correr en cmd)
+docker ps -a -> muestra todos los contenedores (los que están corriendo, detenidos o que fallaron)
+
 DOCKER: - NECESITO TENER ACTIVADO EL WSL ESTO ME PERMITE QUE WINDOWS FUNCIONE CON LINUX , LA MAQUINA PROPIA DEBE ESTAR ACTIVADA LA VIRTUALIZACION
 EN ADMINISTRADOR DE TAREAS --> RENDIMINETO --> CPU --> VIRTUALIZACION --> HABILITADA 
 - DOCKER FUNCIONA CON DOS PUERTOS : UNO INTERNO Y OTRO LOCAL (1434 EJEMPLO UNO QUE NO ESTE USADO) 
