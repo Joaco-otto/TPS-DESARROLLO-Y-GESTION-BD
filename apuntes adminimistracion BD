@@ -757,6 +757,100 @@ DOCKER: - NECESITO TENER ACTIVADO EL WSL ESTO ME PERMITE QUE WINDOWS FUNCIONE CO
 EN ADMINISTRADOR DE TAREAS --> RENDIMINETO --> CPU --> VIRTUALIZACION --> HABILITADA 
 - DOCKER FUNCIONA CON DOS PUERTOS : UNO INTERNO Y OTRO LOCAL (1434 EJEMPLO UNO QUE NO ESTE USADO) 
 
+CLASE N 12/13
+
+/*
+Comandos importantes de Docker:
+docker pull: descarga una imagen desde un repositorio al almacenamiento local. Se suele utilizar para ahorrar
+			tiempos de descargas.
+docker create: crea un contenedor
+docker start: arranca un contenedor
+docker run: crea y arranca un contenedor, si la imagen no está descargada en la PC, también realiza la descarga
+docker ps: viene de process status. Y sirve para ver si el contenedor está vivo, con qué imagen corre, qué
+			puertos está publicando y con qué nombre quedó.
+docker ps -a: muestra todos los contenedores. Los que están corriendo, los detenidos, los que fallaron al arrancar.
+docker stop: detiene el contenedor, le envía una señal a su proceso principal para que deje de recibir conexiones
+			y termine todas las transacciones en curso. Lo apaga de forma segura.
+docker rm: elimina un contenedor, borra la estructura inactiva.
+docker rm -f: envía una señal SIGKILL (signal kill) al proceso principal. Con esto mata al proceso directamente,
+			sin importar lo que esté haciendo. Si el motor estaba escribiendo una transacción en disco, ésta
+			queda por la mitad.
+			En desarrollo y laboratorio podemos usar docker rm -f sin problemas. 
+			En producción siempre se hace primero pull para descargar la imagen y no depender del tiempo de 
+			descarga, se frena el servicio de forma segura con docker stop y luego se elimina con docker rm
+docker logs: sirve para ver la salida o los mensjaes que una aplicación está generando dentro de un contenedor.
+			Por defecto, captura y muestra todo lo enviado a los flujos estándar de Linux:
+			STDOUT(salida estándar): mensajes normales de funcionamiento (ej. Servidor iniciado en puerto 80)
+			STDERR(error estándar): mensajes de error o advertencias (ej. No se pudo conectar a la base de datos)
+			Para que la información pueda ser manejable se suelen usar estos modificadores:
+			ver logs en tiempo real (-f o --follow) -> mantiene la terminal abierta y va mostrando los nuevos
+			mensajes conforme ocurren.
+			limitar las líneas (--tail) -> muestra solo las últimas líneas. Es muy útil si el contenedor lleva
+			meses encendido y tiene miles de registros.
+			añadir marcas de tiempo (-t o --timestamps) -> agrega la fecha y hora exacta a cada línea de log.
+			ver logs desde una fecha específica (--since) -> filtra mensajes por tiempo (ej. los últimos 30
+			minutos). Utiliza un número seguido de una unidad (s segundos, m minutos, h horas, d días). Permite
+			buscar eventos en un punto muy específico del tiempo. El formato suele ser YYYY-MM-DDTHH:MM:SS
+			Desde una fecha específica: docker logs --since "2024-01-01" <contenedor>
+			Desde una hora exacta: docker logs -- since "2024-01-01T15:00:00" <contenedor>
+*/
+
+create database Prueba;
+use Prueba;
+create table alumnos(
+	id int identity(1,1) primary key,
+	apellido varchar(100),
+	nombre varchar(100)
+);
+
+insert into alumnos (apellido, nombre) values
+('García', 'Ana'), 
+('Rodriguez', 'Luis'),
+('Martinez', 'Elena'),
+('López', 'Javier'),
+('Sanchez', 'Sofía');
+
+select * from alumnos;
+
+/*
+Gestión de Almacenamiento: Mecanismos de Persistencia de Almacenamiento( PARA PODER GUARDAR LA INFORMACION )
+
+Un contenedor puede crearse y destruirse rápidamente. 
+Lo que está solo dentro del contenedor puede perderse al eliminarlo. 
+SQL Server guarda sus archivos dentro del contenedor. 
+Un DBA necesita que los datos sobrevivan aunque el contenedor no sobreviva. 
+Por eso necesitamos separar dos cosas: la vida del contenedor y la vida de los datos.
+Para resolver el problema de la persistencia tenemos dos herramientas principales que nos van a permitir evitar
+la pérdida de la información. 
+- El Volume que es un espacio de almacenamiento reservado y gestionado internamente por Docker, Windows no tiene
+un acceso directo. Los archivos de la base de datos están protegidos contra usuarios de Windows (nadie puede 
+entrar a borrar un .mdf por error). Además, los Volúmenes tienen mejor rendimiento de I/O (lectura/escritura) 
+porque no tienen que cruzar la frontera entre Windows y Linux. Casos de uso ideal: Persistencia del 'Core' de 
+la base de datos. Aquí es donde deben vivir los archivos físicos de producción de SQL Server para máxima 
+seguridad y rendimiento.
+- El Bind Mount que es mapear una ruta absoluta y explícita del sistema operativo anfitrión (ej. C:\mis_backups)
+y proyectarla ("espejarla") en otra ruta para que otro proceso (el contenedor) lo vea como si fuera local. Es 
+administrado por Windows. Podemos ver, editar, copiar y pegar archivos usando el explorador de Windows 
+normalmente. Casos de uso ideal: Ingesta de datos. Pasar archivos .bak, scripts de instalación, o transferir 
+archivos CSV de un lado a otro.
+*/
+
+/*
+-v es una sintaxis corta para montar almacenamiento, permite poner el volumen o un bind mount, en el primer 
+caso para los datos, le pasamos un volumen. Es gestionado por el mismo docker, como ahora no existe, Docker lo 
+va a crear al momento de levantar este contenedor. Luego le pasamos la ruta de Windows que se va a bindear 
+(enlazar) con la ruta en la que docker va a guardar los backups.
+Esto va a fallar porque SQL Server 2022 en Docker arranca como usuario no root, por lo tanto, no tiene permisos
+de escritura sobre esa ruta montada. La opción -u o --user en Docker sirve para indicar con qué usuario se 
+ejecuta el proceso principal del contenedor. Docker acepta usuario por nombre o por UID; 0 es el UID del usuario
+root. En Linux, root es el usuario administrador con privilegio máximo. Es el equivalente conceptual al nivel 
+más alto de administración del sistema operativo. Cuando un proceso corre como root, tiene mucha más capacidad 
+para: leer y escribir archivos, cambiar permisos, crear directorios, y operar sobre recursos del sistema. SQL 
+Server corre como proceso dentro de un contenedor Linux. Ese proceso tiene un usuario Linux. Si montamos 
+persistencia, ese usuario tiene que tener permisos sobre esa ruta. En producción, lo correcto es mantener el 
+arranque non-root, y preparar los permisos del almacenamiento persistente para que ese usuario pueda leer y 
+escribir.
+*/
 
 
 
