@@ -851,7 +851,99 @@ persistencia, ese usuario tiene que tener permisos sobre esa ruta. En producció
 arranque non-root, y preparar los permisos del almacenamiento persistente para que ese usuario pueda leer y 
 escribir.
 */
+CLASE 14
 
+/*
+En el día a día, los desarrolladores suelen decirle "volumen" a cualquier cosa que se conecte con el flag -v
+Como el flag es literalmente la inicial de "volumen", la industria adoptó el término para todo. Sin embargo,
+a nivel estricto de ingeniería, llamar volumen a Bind Mount, es un error.
+A nivel profesional si hace falta una configuración especial de volumen, se crea aparte primero con 
+docker volume create nombre_del_volumen, y se agregan los parámetros de configuración necesarios.
+*/
+
+/*
+Docker Compose
+
+Hasta ahora levantábamos SQL Server con docker run, o sea, de forma imperativa: le dábamos a Docker una orden 
+larga y detallada. El problema arquitectónico de esto es la fragilidad: un error de sintaxis, un espacio mal 
+puesto o la falta de un parámetro destruye el despliegue. Además, no es reproducible ni versionable. 
+
+Para mejorar esto aparece IaC (Infraestructura como código), esto significa describir la infraestructura en un 
+archivo de texto. No estamos clickeando ventanas ni recordando parámetros de memoria. Estamos dejando una 
+definición legible, repetible y transportable. 
+Vamos a pasar a una forma declarativa: en vez de escribir todo en una sola línea, dejamos por escrito qué 
+servicios queremos, qué puertos publicamos, qué variables de entorno necesita SQL Server y qué volumen guarda 
+los datos. 
+
+Para eso vamos a utilizar la herramienta Docker Compose que permite definir y estructurar todo el entorno de la
+base de datos de forma declarativa dentro de un único archivo de texto, llamado compose.yaml (iamel) o 
+compose.yml. Esa es la forma moderna de nombrarlos, anteriormente se los nombraba como: docker-compose.yml o 
+docker.compose.yaml
+
+Ventajas de utilizar Docker Compose:
+•	Simplicidad y Rapidez: Con ejecutar un solo comando corto, como docker compose up -d, Docker lee tu archivo,
+y automáticamente crea y levanta toda la infraestructura que definiste. Cuando terminas de trabajar, puedes 
+desmontar todo el entorno limpiamente ejecutando docker compose down
+•	Evita Errores Humanos: Te olvidas de escribir mal las variables de entorno o de olvidar mapear el volumen 
+de los backups.
+•	Reproducibilidad 100%: Al estar todo definido de manera declarativa en un archivo de texto, garantizas que 
+el entorno sea siempre idéntico y predecible. Puedes compartir este archivo con tus compañeros de equipo 
+(por ejemplo, a través de Git) y todos levantarán un laboratorio o base de datos con la misma configuración 
+exacta.
+•	Gestión de Ciclo de Vida: Simplifica el control y la administración de los servicios en cualquier etapa, 
+ya sea para desarrollo, pruebas, o flujos de integración continua.
+
+En tutoriales más viejos o foros de internet es muy común ver el comando escrito con guion (docker-compose), 
+pero el estándar profesional y la herramienta actual se ejecutan separados por un espacio (docker compose).
+
+Compose usa YAML como formato declarativo para describir servicios, redes y volúmenes.
+YAML (acrónimo de YAML Ain't Markup Language/ YAML No es un lenguaje de marcado, "acrónimo recursivo") es un 
+formato de escritura de datos diseñado para ser leído fácilmente por humanos. Técnicamente es un lenguaje de 
+marcado porque sirve para "etiquetar" datos y darles una estructura que una computadora entienda.
+Originalmente significaba "Yet Another Markup Language" (Todavía otro lenguaje de marcado), pero los creadores 
+lo cambiaron para diferenciarlo de lenguajes como HTML. Apareció en 2001. Se buscaba algo que no fuera tan 
+"sucio" visualmente como el XML (lleno de etiquetas < >) y que fuera más fácil de leer que el JSON.
+
+Reglas de sintaxis:
+-	Comentarios con #: usando el símbolo de numeral todo lo que esté a la derecha será ignorado por Docker.
+-	Indentación con espacios: La jerarquía se define por el número de espacios a la izquierda.
+-	Prohibido el uso del tabulador
+-	Clave: Valor: Siempre un nombre, dos puntos y un espacio.
+-	Listas con guiones: Para elementos al mismo nivel se usa un guion y un espacio.
+-	Mayúsculas/Minúsculas: Es sensible. Version no es lo mismo que version.
+
+Estructura Interna Básica 
+Name: es opcional, sirve para darle nombre al proyecto Compose. Si no lo definimos, Compose usa como nombre el 
+de la carpeta donde está el archivo. Ese nombre se usa para aislar entornos y afecta nombres generados de red, 
+recursos y contenedores.
+
+Todo archivo compose.yml profesional se divide en tres grandes bloques principales (en la raíz, pegados
+al margen izquierdo):
+- services: (Obligatorio). Es el bloque principal. Define los contenedores que van a correr. En este caso, un 
+solo servicio llamado lógicamente mssql. Cada servicio (ej. base_de_datos, aplicacion_web) es un contenedor 
+distinto.
+Dentro de services tenemos:
+Image: Indica qué imagen usar. En aula, 2022-latest es aceptable; en producción, lo profesional es fijar una 
+versión concreta. 
+container_name: No es obligatorio. Fija el nombre absoluto a nivel de proceso. Sirve, por ejemplo, para que 
+veamos ese nombre cuando hagamos docker ps. Pero para comunicación interna entre contenedores, lo realmente 
+importante es el nombre del servicio mssql. Por qué lo hacemos: Si omitimos esto, Compose autogenerará nombres 
+dinámicos (ej. proyecto_mssql_1), lo cual complica la administración y la lectura de logs.
+environment: El mapeo exacto de los flags -e. Las variables de entorno inyectan configuración al proceso de 
+arranque
+Ports: El primer puerto es el puerto de la máquina anfitriona; el segundo, el puerto dentro del contenedor.
+volumes (Nivel Servicio):
+•	Línea 1: El Volumen nativo (sql_volumen_datos) montado en /data. Garantiza alta velocidad de I/O y 
+protección a nivel de host para los archivos .mdf.
+•	Línea 2: El Bind Mount mapeando una ruta de Windows. Permite la ingesta transparente de archivos .bak.
+
+- volumes: (Opcional, pero vital para DBAs). Acá se declaran los volúmenes nativos gestionados por Docker que 
+los servicios van a consumir, para que Compose los cree automáticamente si no existen.
+
+- networks: (Opcional avanzado). Por defecto, Compose crea una red para todos los servicios del archivo. 
+Pero si quisiéramos arquitecturas de seguridad estrictas (ej. una red pública y una privada), se declaran acá.
+
+*/
 
 
 
