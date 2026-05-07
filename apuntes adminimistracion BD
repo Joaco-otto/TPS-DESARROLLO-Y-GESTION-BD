@@ -945,6 +945,42 @@ Pero si quisiéramos arquitecturas de seguridad estrictas (ej. una red pública 
 
 */
 
+CLASE N 15
+
+*/
+
+--  Validador YAML online
+--  https://www.yamllint.com/
+
+-- verificamos si quedé levantado con docker compose -ps  o con docker ps
+
+create database Pruebita;
+use Pruebita;
+go
+create schema nuevo;
+go
+-- un esquema (schema) es una especie de contenedor lógico para organizar objetos dentro
+-- de una base. El más común en SQL Server es dbo, así como en PostgreSQL suele ser public
+
+create table nuevo.countries(
+	id int identity(1,1) primary key,
+	name varchar(50)
+);
+
+insert into nuevo.countries (name) values
+('Holanda'), ('Austria'), ('Bulgaria'), ('Francia'), ('Morón');
+
+select * from nuevo.countries;
+
+-- docker compose down
+-- detiene y elimina contenedores y redes creadas por up, pero no elimina por
+-- defecto los volúmenes nombrados.
+
+backup database Pruebita to disk = '/var/opt/mssql/backups/bk_pruebita.bak';
+
+drop database Pruebita;
+use master;
+
 
 
 
