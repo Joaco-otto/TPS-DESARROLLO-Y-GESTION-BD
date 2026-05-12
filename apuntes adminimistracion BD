@@ -980,6 +980,264 @@ backup database Pruebita to disk = '/var/opt/mssql/backups/bk_pruebita.bak';
 
 drop database Pruebita;
 use master;
+CLASE # 16 
+use master;
+
+-- Aunque nos movamos a la BD master, puede pasar que el SSMS u otros procesos, mantengan
+-- una conexión abierta en segundo plano hacia esa base de datos.
+-- Si hay al menos una sola consulta activa, un reporte ejecutándose o incluso si el 
+-- explorador de objetos del SSMS está intentando refrescar algo en la base.
+-- El motor bloquea el DROP para evitar una pérdida accidental de datos en uso.
+-- Por eso debemos forzar el cierre de todas las conexiones antes de poder borrar la base.
+-- Lo podemos hacer desde la GUI directamente.
+-- O ejecutando el siguiente código T-SQL
+-- T-SQL (Transact-SQL) es la extensión de Microsoft al lenguaje SQL estándar.
+-- T-SQL permite programar dentro de la base de datos. Incluye funciones que no existen
+-- en otros SQL, o se escriben distinto.
+
+-- ponemos la BD en modo usuario único,y forzamos la desconexión de todos
+alter database Pruebita
+set single_user
+with rollback immediate;
+-- por defecto, las bases de datos están en modo MULTI_USER (muchas personas/apps conectadas a la vez)
+-- al cambiarlo a SINGLE_USER:
+-- SQL Server restringe el acceso para que solo una conexión pueda estar activa.
+-- Generalmente esa conexión sería la nuestra (la que ejecutó el comando).
+-- Cualquier otra persona o aplicación que intente entrar recibirá un error de "Base de datos de modo usuario
+-- único"
+-- Si pasamos a SINGLE_USER y hay alguien conectado, SQL Server se quedaría esperando a que esa persona cierre
+-- su sesión.
+-- Al añadir ROLLBACK IMMEDIATE:
+-- Corta las conexiones: Mata instantáneamente cualquier conexión activa de otros usuarios o servicios (como
+-- por ejemplo el propio explorador de SSMS).
+-- Deshace cambios: si alguien estaba ejecutando un INSERT o un UPDATE que no había terminado, SQL Server hace
+-- un rollback (revierte los cambios) para que la base de datos quede en un estado consistente y seguro.
+-- Es inmediato: no espera a que los procesos terminen limpiamente; los detiene en el acto.
+
+/*
+Limpieza del entorno
+
+Docker facilita mucho las pruebas, pero también deja residuos: contenedores detenidos, redes que ya no usamos, 
+imágenes viejas y volúmenes. Como buena práctica, al terminar un laboratorio conviene limpiar. Pero limpiar no 
+significa borrar todo sin pensar. Un punto muy importante: docker compose down baja contenedores y redes del 
+proyecto, pero no borra automáticamente los volúmenes nombrados. Eso es bueno, porque así conservamos 
+persistencia. En cambio, si usamos down -v, ahí sí eliminamos también esos volúmenes. Y con docker system prune
+hacemos una limpieza más general del entorno, pero aun así los volúmenes no se borran por defecto salvo que lo 
+indiquemos explícitamente.
+
+docker -v o docker --version: ver la versión de Docker
+
+docker volume ls -> Muestra los volúmenes creados en Docker.
+
+docker ps -> Muestra solo los contenedores que están corriendo actualmente.
+
+docker ps -a -> Muestra todos los contenedores, tanto activos como detenidos.
+
+docker ps -a --filter volume=(nombre del volumen) -> Sirve para identificar si un volumen está siendo usado o 
+	está asociado a algún contenedor. Si aparece un contenedor en el resultado, ese volumen está vinculado a 
+	ese contenedor.
+
+docker volume inspect (nombre de volumen) -> Muestra información técnica del volumen, por ejemplo: nombre, driver, 
+	punto de montaje interno, labels, fecha de creación.
+
+docker system prune -> Elimina recursos no utilizados, como: contenedores detenidos, redes no utilizadas, 
+	imágenes dangling, caché de build. No elimina volúmenes por defecto. Es una limpieza relativamente segura 
+	para laboratorios, aunque siempre conviene leer el mensaje de advertencia antes de confirmar. Una imagen 
+	dangling es una imagen que quedó “colgada”, sin nombre útil y sin etiqueta. La caché de build es información
+	que Docker guarda para acelerar futuras construcciones de imágenes.
+
+docker system prune –volumes -> Limpia recursos no usados e incluye volúmenes anónimos no utilizados. Docker 
+	protege los volúmenes nombrados porque suelen usarse para persistir datos importantes. La salida del propio 
+	comando advierte que remueve “anonymous volumes” no usados, y la documentación de docker volume prune 
+	distingue entre volúmenes anónimos y nombrados.
+
+docker system prune -a -> con -a se eliminan imágenes no utilizadas por contenedores existentes. Si después 
+	necesitamos una imagen eliminada, Docker tendrá que descargarla nuevamente.
+
+docker system prune -a –volumes -> Limpieza más agresiva. Puede eliminar: contenedores detenidos, redes no 
+	usadas, imágenes no utilizadas, volúmenes anónimos no utilizados. No conviene usarlo sin revisar antes, 
+	especialmente utilizando SQL Server, porque los volúmenes pueden contener datos persistentes.
+
+docker volume prune -> Elimina volúmenes anónimos no utilizados por ningún contenedor. Docker pide confirmación 
+	antes de borrar. 
+
+docker volume prune -a ó docker volume prune –all -> Este comando sí puede borrar también volúmenes nombrados 
+	que no estén siendo usados. Importante: Si un volumen contiene datos de SQL Server y lo borramos, podemos 
+	perder bases de datos persistidas.
+
+docker volume rm (nombre del volumen) -> Sirve para borrar un volumen puntual. Docker no permite borrar un 
+	volumen que esté en uso por un contenedor. Si el volumen está en uso, primero hay que eliminar el contenedor
+	que lo usa.
+
+docker stop (nombre del contenedor) -> Detiene un contenedor que está corriendo. No borra el contenedor ni sus 
+	volúmenes.
+
+docker rm (nombre del contenedor) -> Elimina el contenedor. No elimina automáticamente los volúmenes nombrados 
+	asociados.
+
+docker compose up -d -> Levanta los servicios definidos en el archivo de compose.yml
+
+docker compose down -> Detiene y elimina los contenedores y redes creados por ese proyecto Compose. Por defecto,
+	docker compose down elimina los contenedores de los servicios y las redes creadas por Compose, pero no 
+	elimina automáticamente los volúmenes nombrados.
+
+docker compose down -v -> Detiene y elimina: contenedores del proyecto, redes del proyecto, volúmenes asociados 
+	al proyecto Compose. Importante: en SQL Server esto puede borrar datos persistidos.
+
+*/
+
+CLASE #17 
+
+SEGURIDAD EN BASES DE DATOS: IDEA GENERAL
+
+La seguridad en bases de datos busca proteger la información y controlar correctamente el acceso al sistema.
+No se trata solo de poner una contraseña, sino de definir:
+• quién puede entrar
+• a qué base puede acceder
+• qué podemos hacer dentro de ella
+• cómo evitar errores o usos indebidos
+La seguridad protege los datos frente a accesos no autorizados, cambios incorrectos, borrados accidentales y 
+malas prácticas de administración.
+También ayuda a reducir el impacto de los errores humanos.
+Por ejemplo, no es lo mismo que un usuario solo pueda consultar datos, a que también pueda borrar registros o 
+modificar información sensible.
+Por eso, en un entorno profesional no conviene usar cuentas con privilegios excesivos para todo.
+Dar más permisos de los necesarios aumenta el riesgo de errores, daños y pérdida de control.
+La seguridad en bases de datos busca que cada persona o sistema acceda solo a lo que realmente necesita, de la 
+forma correcta y con el menor riesgo posible.
+
+
+AUTENTICACIÓN VS AUTORIZACIÓN
+
+En seguridad de bases de datos, autenticación y autorización no significan lo mismo.
+Autenticación es el proceso de verificar la identidad de quien intenta ingresar, es decir, demostrar quién sos.
+Autorización es el proceso de definir qué acciones puede realizar ese usuario una vez que ya ingresó, es decir, 
+decidir qué te dejan hacer.
+autenticación = entrar
+autorización = operar
+Un usuario puede autenticarse correctamente y aun así no tener permisos para trabajar sobre una base de datos o
+sobre determinados objetos.
+Por eso, poder conectarse al servidor no significa automáticamente poder consultar, insertar, modificar o borrar
+datos.
+Esta diferencia es fundamental para entender la seguridad en SQL Server.
+
+
+NIVELES DE SEGURIDAD EN SQL SERVER
+
+En SQL Server, la seguridad no se maneja en un solo nivel. Se organiza en capas o escalones.
+Los dos niveles principales son:
+• nivel servidor o instancia 
+• nivel base de datos 
+
+Seguridad a nivel servidor / instancia
+En este nivel se controla quién puede ingresar al motor de SQL Server. Es decir, primero se define si una 
+identidad puede conectarse o no al servidor.
+
+Seguridad a nivel base de datos
+Una vez que alguien puede entrar al servidor, todavía falta definir si puede trabajar dentro de una base de 
+datos específica y qué puede hacer allí.
+Por eso, tener acceso al motor no significa automáticamente tener acceso útil dentro de una base.
+
+En SQL Server, la seguridad se piensa como una cadena:
+• acceso al servidor 
+• acceso a una base 
+• permisos dentro de esa base 
+Esta separación permite administrar mejor los accesos y dar distintos alcances según la necesidad de cada 
+usuario.
+
+Comparación inicial con MySQL
+En MySQL, para muchos casos iniciales, esta separación no se percibe tanto y suele parecer más directo: se crea
+un usuario y se le dan permisos.
+En SQL Server, en cambio, esta diferencia entre nivel servidor y nivel base está más marcada y es fundamental 
+entenderla.
+
+
+LOGIN VS USER
+
+En SQL Server, login y user no son lo mismo.
+
+Un login es una identidad que existe a nivel servidor o instancia.
+Sirve para poder conectarse al motor de SQL Server.
+login = permiso para entrar al servidor
+
+Un user es una identidad que existe dentro de una base de datos específica.
+Sirve para que ese acceso tenga sentido dentro de esa base.
+user = identidad dentro de una base
+
+En muchos casos, un login se vincula con un user dentro de una base determinada.
+Eso significa que:
+• el login permite entrar al servidor 
+• el user permite existir y operar dentro de una base 
+Por eso, un mismo login puede conectarse al servidor, pero no tener acceso útil dentro de una base si no está 
+asociado a un user en esa base.
+
+En SQL Server, entrar al motor y poder trabajar dentro de una base son dos cosas distintas.
+
+Cadena lógica de acceso, la seguridad se podría pensar así:
+• servidor 
+• login 
+• base 
+• user 
+• rol 
+• permiso final 
+
+Primero se entra al servidor, después se define la identidad dentro de la base, luego se asignan roles y 
+finalmente se llega a los permisos concretos.
+*/
+
+create database Comercio;
+GO
+
+use Comercio;
+GO
+
+create table dbo.Clientes(
+	id_cliente int identity(1, 1),
+	nombre nvarchar(100) not null,
+	email nvarchar(150) not null,
+	activo bit not null constraint DF_Clientes_activo default 1,
+	fecha_alta datetime2 not null constraint DF_Clientes_fechaAlta default sysdatetime(),
+	constraint PK_Clientes primary key (id_cliente)
+);
+GO
+
+create table dbo.Ventas(
+	id_venta int identity(1, 1),
+	id_cliente int not null,
+	fecha_venta datetime2 not null constraint DF_Ventas_fechaVenta default sysdatetime(),
+	importe decimal(10,2) not null constraint CHK_Ventas_Importe check (importe>0),
+	observacion nvarchar(250),
+	constraint PK_Ventas primary key (id_venta),
+	constraint FK_Ventas_Clientes foreign key (id_cliente) references dbo.Clientes(id_cliente)
+);
+GO
+
+select db_name(); -- vemos en qué base estamos parados
+
+-- -e "MSSQL_COLLATION=SQL_Latin1_General_CP1_CI_AS"
+-- configuramos la collation del servidor con docker run
+-- si no ponemos nada, por defecto queda en SQL_Latin1_General_CP1_CI_AS
+-- desde compose lo ponemos dentro de los environment
+-- MSSQL_COLLATION: "SQL_Latin1_General_CP1_CI_AS"
+-- select serverproperty('collation') as collationServer;
+-- con esa query vemos la collation del servidor.
+
+-- creamos tablas pertenecientes al esquema dbo que es el esquema por defecto, lo nombramos solo por claridad
+
+-- bit es un tipo de dato entero muy chico que sirve para guardar 1, 0 o NULL. SQL Server lo usa habitualmente
+-- para representar valores booleanos.
+
+-- una constraint es una regla que la base impone sobre los datos. Ejemplos: primary key, foreign key, check, etc
+-- si declaramos una constraint sin especificar el nombre, SQL Server le pone uno por defecto, que puede ir
+-- variando según el entorno. Al ponerle uno específico nosotros, podemos ubicarla fácilmente.
+-- Los nombres de las constraint deben respetar las reglas de los identificadores. Por lo general van a comenzar 
+-- con: PK_ FK_ DF_ CHK_ UQ_
+
+-- datetime2 es un tipo de dato de fecha y hora. Es una extensión de datetime, con rango de fechas más grandes,
+-- más precisión fraccionaria por defecto y precisión configurable.
+
+
+
 
 
 
