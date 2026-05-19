@@ -1236,6 +1236,124 @@ select db_name(); -- vemos en qué base estamos parados
 -- datetime2 es un tipo de dato de fecha y hora. Es una extensión de datetime, con rango de fechas más grandes,
 -- más precisión fraccionaria por defecto y precisión configurable.
 
+CLASE # 18 ---
+
+-- Actualmente es la versión más moderna y flexible para guardar la fecha y la hora.
+-- sysdatetime() es una función del sistema que devuelve la fecha y la hora actual del equipo en donde corre
+-- la instancia de SQL Server y lo devuelve como un datetime2()
+
+-- varchar almacena un texto de longitud variable NO UNICODE, nvarchar almacena un texto de longitud variable
+-- UNICODE.
+-- varchar no garantiza representar correctamente cualquier caracter de cualquier idioma. NVARCHAR sí, y está
+-- pensado para eso.
+
+-- insertamos 5 registros en cada tabla
+INSERT INTO dbo.Clientes (nombre, email) VALUES
+(N'Juan Pérez', N'juan.perez@gmail.com'),
+(N'María García', N'maria.garcia@gmail.com'),
+(N'Carlos Lopez', N'carlos.lopez@gmail.com'),
+(N'Ana Martinez', N'ana.martinez@gmail.com'),
+(N'Luis Torres', N'luis.torres@gmail.com');
+-- la N adelante del valor del tipo NVARCHAR indica que la cadena es del tipo UNICODE. En campos NVARCHAR es
+-- obligatorio ponerlo si queremos admitir caracteres especiales o múltiples idiomas. Usarla siempre garantiza
+-- que los datos se guarden sin problemas, sin importar los caracteres que tengan. Es una buena práctica para
+-- evitar errores de guardado. 
+
+INSERT INTO dbo.Ventas (id_cliente, importe, observacion) VALUES
+(1, 150.50, N'Venta minorista estándar'),
+(1, 45.00, N'Compra de accesorios'),
+(2, 1200.00, N'Pedido al por mayor'),
+(4, 89.99, N'Promoción de temporada'),
+(5, 210.75, NULL);
+
+-- Creamos un login
+-- El login existe a nivel servidor/instancia. No vive dentro de la base de datos.
+-- Sirve para autenticarse y conectarse al motor.
+USE master; -- no es estrictamente obligatorio porque el login es de nivel servidor, no de nivel base.
+-- pero es una buena práctica para scripts
+
+CREATE LOGIN vendedor_login -- este nombre representa la identidad con la que alguien o algo se va a conectar
+WITH	password='Ventas$1'; -- como estamos utilizando SQL Authentication, este login necesita una contraseña
+
+-- verificamos que el login existe:
+SELECT	name, -- es el nombre del login
+		type_desc, -- describe el tipo de identidad
+		create_date, -- fecha y hora en la que se creó el login
+		create_date AT TIME ZONE 'UTC' AT TIME ZONE 'Argentina Standard Time' AS Hora_Local
+FROM	sys.server_principals -- devuelve principales de seguridad a nivel servidor
+WHERE	name='vendedor_login';
+-- sys.server_principals es una vista del sistema que contiene un fila por cada identidad que tiene permiso
+-- para conectarse al servidor (no solo a una base de datos específica).
+-- Incluye logins de SQL, cuentas de Windows, grupos y roles de servidor.
+-- En SQL Server, un "principal" es cualquier entidad que puede solicitar acceso a los recursos.
+
+-- EL login ya existe, pero todavía no tiene USER en Comercio.
+USE Comercio;
+
+-- esta consulta en SQL Server devuelve información contextual de la sesión actual
+SELECT	SUSER_SNAME() AS Login_Actual, -- nombre del inicio de la sesión actual
+		USER_NAME() AS Usuario_En_La_Base, -- nombre del usuario de la base de datos
+		DB_NAME() AS Base_Actual; -- nombre de la base de datos actual
+-- el usuario que muestra es un usuario invitado "guest", es un usuario especial.
+-- En este ejemplo, el login pudo entrar a master usando el usuario especial guest.
+-- Eso no significa que tenga un user propio ni privilegios importantes en la base.
+-- En cambio, no puede entrar a Comercio, porque en esa base no tiene user creado para ese login.
+-- Si guest estuviera habilitado con CONNECT en Comercio, podría entrar como guest también.
+
+-- logueados nuevamente como sa, nos paramos dentro de la BD Comercio
+USE Comercio;
+
+-- creamos el usuario en la base Comercio
+CREATE USER vendedor_login
+FOR	LOGIN vendedor_login
+WITH DEFAULT_SCHEMA = dbo;
+
+-- verificamos el usuario creado
+SELECT	name,
+		type_desc,
+		default_schema_name,
+		create_date AT TIME ZONE 'UTC' AT TIME ZONE 'Argentina Standard Time' AS Hora_Local
+FROM	sys.database_principals
+WHERE	name = 'vendedor_login';
+
+-- intentamos entrar a la base nuevamente con vendedor_login
+USE Comercio; -- entró correctamente
+
+-- intentamos consultar una tabla
+select * from dbo.Clientes;
+-- da error porque faltan permisos
+
+-- distintas formas de listar las tablas de una base de datos
+-- Usando INFORMATION_SCHEMA (standard SQL)
+-- Esta consulta devuelve los nombres de todas las tablas de usuario de la base de datos en donde se ejecute
+SELECT	TABLE_NAME
+FROM	INFORMATION_SCHEMA.TABLES
+WHERE	TABLE_TYPE = 'BASE TABLE';
+
+-- Usando vistas de catálogo (específico de SQL Server)
+-- Es la opción recomendada por Microsoft para obtener más detalles técnicos del objeto
+SELECT	name
+FROM	sys.tables; -- solo muestra tablas de usuario
+
+-- Usando el procedimiento almacenado del sistema
+-- Es un comando rápido para ver objetos de la base actual.
+EXEC sp_tables; -- muestra todos los objetos
+EXEC sp_tables @table_type = "'TABLE'";
+
+-- De ninguna manera podemos ver las tablas, justamente porque a vendedor_login le faltan permisos.
+
+-- Login y User no son lo mismo.
+-- El login es a nivel servidor, se utiliza para autenticarse y acceder a la instancia de SQL Server.
+-- El user es a nivel base, se crea para un login en una base de datos específica para dar autorización y permisos
+-- Mismo nombre no significa mismo objeto. Aunque ambos se llamen igual siguen siendo objetos distintos.
+-- La clase es el mapeo, "FOR LOGIN" es lo que enlaza ambos niveles.
+-- Crear un login y un user no resuelve los permisos.
+-- La lógica del modelo de seguridad sería primero crear la identidad para entrar al servidor (login), luego la
+-- identidad dentro de una base (user) y luego definir qué puede hacer ese usuario con las tablas u otros objetos.
+
+/*	===========================================
+				Roles y permisos
+	=========================================== */
 
 
 
