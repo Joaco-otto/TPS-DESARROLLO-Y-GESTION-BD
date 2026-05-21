@@ -1352,8 +1352,145 @@ EXEC sp_tables @table_type = "'TABLE'";
 -- identidad dentro de una base (user) y luego definir qué puede hacer ese usuario con las tablas u otros objetos.
 
 /*	===========================================
+
+  CLASE N 19
 				Roles y permisos
 	=========================================== */
+
+Un rol es un agrupador de permisos. En vez de darle permisos directamente a cada usuario, creamos un rol
+	según el perfil de trabajo y agregamos usuarios ese rol.
+	Luego, en vez de repetir permisos usuario por usuario, asignamos permisos al rol. Esto permite administrar
+	los accesos de forma más ordenada, clara y más fácil de mantener.
+	En el mundo real y profesional de las bases de datos, los permisos se dan y se quitan casi exclusivamente
+	a los roles.
+	La lógica sería LOGIN → USER → ROL → PERMISOS
+	Importante: no damos permisos por comodidad. Damos solo lo que el perfil necesita para trabajar.
+*/
+
+/*
+En general, es mejor otorgar permisos a roles y no directamente a usuarios.
+Los permisos directos pueden existir, pero conviene reservarlos para casos puntuales o excepciones justificadas.
+Podríamos ejecutar un comando como GRANT SELECT ON clientes TO usuario_juan;.El problema: No es escalable. Si la
+empresa crece y contrata a 50 personas en el área de ventas, tendríamos que escribir scripts de permisos 
+individuales para cada uno. Si el día de mañana cambia una regla del negocio, tendríamos que buscar y modificar
+los permisos de los 50 usuarios uno por uno. Es un caos para auditar y mantener.
+Asignar permisos a un Rol es la práctica recomendada. Creamos un rol, le otorgamos los permisos una sola vez 
+(GRANT SELECT ON clientes TO nombre_del_rol;) y luego simplemente agregamos a los usuarios dentro de ese rol.
+Este enfoque se conoce como RBAC (Role-Based Access Control o Control de Acceso Basado en Roles) y tiene tres 
+ventajas particulares:
+- Administración centralizada: Si el departamento de ventas necesitara ahora permiso para insertar datos, 
+modificamos el rol una sola vez y automáticamente los 50 usuarios reciben el permiso.
+- Alta y baja de personal inmediata: Si llega un empleado nuevo, solo lo agregamos al rol. Si se va de la 
+empresa, lo quitamos del rol y pierde todo al instante. No quedan permisos dando vueltas olvidados.
+- Orden visual en Docker y producción: Al revisar las vistas como sys.database_principals, vamos a ver una 
+estructura limpia donde los usuarios son solo miembros de contenedores lógicos (DATABASE_ROLE).
+
+Uno de los pocos escenarios donde se justifica darle un permiso directo a un usuario (o más comúnmente un DENY) 
+es para una excepción puntual, una restricción explícita o un caso temporal. Por ejemplo: "Todos los vendedores
+pueden ver la tabla de clientes, excepto Juan, porque está bajo investigación". Ahí le aplicaríamos un DENY 
+directo a Juan, el cual ganará sobre el rol.
+*/
+
+-- nos conectamos como SA
+-- Vamos a trabajar dentro de la base comercio
+-- Los roles de base de datos existen dentro de una base específica
+USE Comercio;
+GO
+
+-- comprobamos login, user y base
+SELECT	SUSER_NAME() [login],
+		USER_NAME() [user],
+		DB_NAME() [base];
+
+-- Creamos un rol para el perfil vendedor.
+-- Un rol es un agrupador de permisos.
+-- En lugar de dar permisos directamente al usuario, se los vamos a dar al rol.
+CREATE ROLE rol_vendedor; -- el rol solo está creado, no tiene permisos ni miembros
+
+-- verificamos que el rol fue creado dentro de la base Comercio
+SELECT		NAME,
+			TYPE_DESC, -- muestra la descripción textual del tipo de principal de seguridad dentro de la BD
+			CREATE_DATE,
+			DB_NAME() [base actual]
+FROM		sys.database_principals -- muestra las identidades de seguridad dentro de la base actual
+WHERE		NAME = 'rol_vendedor';
+
+-- agregamos al user vendedor_login al rol rol_vendedor
+ALTER ROLE rol_vendedor ADD MEMBER vendedor_login;
+GO
+
+-- Verificamos qué usuarios pertenecen al rol rol_vendedor
+-- A nivel técnico, la que sigue es una consulta estándar para auditar la asignación de permisos por roles
+SELECT		rol.name [rol],
+			usuario.name [usuario],
+			drm.*
+FROM		sys.database_role_members [drm]
+JOIN		sys.database_principals [rol] ON drm.role_principal_id=rol.principal_id
+JOIN		sys.database_principals [usuario] ON drm.member_principal_id=usuario.principal_id
+WHERE		rol.name = 'rol_vendedor';
+
+-- Utilizamos dos alias para nombrar al mismo objeto. Lo hacemos cuando necesitamos cruzar una tabla consigo 
+-- misma porque la información que buscamos está guardada en la misma lista, pero en filas separadas. 
+-- Esta técnica se conoce en SQL como un Autojoin (o autoasociación). 
+-- En SQL Server, tanto los Roles como los Usuarios son considerados "Entidades de Seguridad" (Principals), 
+-- por lo que están guardados juntos en la misma tabla: sys.database_principals
+-- Para conectarlos, existe una tabla intermedia llamada sys.database_role_members que solo guarda números de 
+-- identificación (IDs). Tiene una columna para el ID del Rol (role_principal_id)
+-- Tiene otra columna para el ID del Miembro/Usuario (member_principal_id). 
+-- Como los nombres de texto tanto del rol como del usuario están en la misma tabla (sys.database_principals),
+-- tenemos que llamar a esa tabla dos veces en la misma consulta. Para que el motor de SQL no se confunda y sepa
+-- a cuál de las dos llamadas nos referimos en cada paso, estás obligado a ponerles alias diferentes:
+-- rol: Es la primera copia de la tabla. La usamos exclusivamente para buscar los datos del grupo o rol.
+-- usuario: Es la segunda copia de la tabla. La usamos exclusivamente para buscar los datos de las personas o 
+-- miembros que están metidos en ese grupo
+
+-- otorgamos permisos al rol
+-- En una administración ordenada, conviene otorgar permisos al rol, no directamente a cada usuario.
+-- Los permisos indican qué acciones puede realizar un usuario o rol sobre los objetos de la base.
+-- GRANT es el comando que se usa para dar permisos
+GRANT SELECT ON dbo.Clientes TO rol_vendedor; -- puede consultar la tabla Clientes
+GRANT SELECT ON dbo.Ventas TO rol_vendedor; -- puede consultar la tabla Ventas
+GRANT INSERT ON dbo.Ventas TO rol_vendedor; -- puede insertar nuevas ventas
+-- con esto, estamos aplicando el principio de mínimo privilegio. Ya que no le dimos permisos para UPDATE,
+-- DELETE, ni permisos sobre toda la base ni permisos administrativos.
+
+-- ahora nos conectamos nuevamente con vendedor_login para probar
+USE Comercio;
+
+SELECT	SUSER_NAME() [login],
+		USER_NAME() [user],
+		DB_NAME() [base];
+
+SELECT * FROM dbo.Clientes;
+-- el rol_vendedor ahora puede consultar la tabla Clientes
+
+SELECT * FROM dbo.Ventas;
+-- el rol_vendedor ahora puede consultar la tabla Ventas
+
+INSERT INTO dbo.Ventas (id_cliente, importe, observacion) VALUES (1, 1200.00, N'Venta cargada por vendedor');
+-- el rol_vendedor ahora puede insertar una venta
+
+-- comprobamos la venta ingresada
+SELECT * FROM dbo.Ventas;
+
+/*
+A partir de la versión 2012, SQL Server introdujo una mejora de rendimiento: la caché de identidad.
+
+Para que los INSERT sean mucho más rápidos y no tengan que escribir en el disco duro cada vez que generan un 
+nuevo ID, SQL Server preasigna (guarda en la memoria RAM) "bloques" de números.
+
+Para un tipo de dato INT, el tamaño de este bloque en caché es de 1000 números.
+
+Si por algún motivo el servicio de SQL Server se reinicia (por ejemplo, si apagás la computadora, o si detenés 
+el contenedor de Docker), todos los números que estaban en la memoria RAM esperando ser usados se pierden.
+
+Cuando vuelves a encender el motor y hacés un nuevo INSERT, SQL Server dice: "Perdí la cuenta exacta en la 
+memoria, así que para evitar duplicados, arranco el siguiente bloque sumando 1000 al último valor base".
+
+En el mundo de las bases de datos relacionales, no es un problema. Los IDs no están diseñados para ser 
+contadores secuenciales perfectos sin huecos, sino simplemente identificadores únicos. Si faltan números en el 
+medio, la base de datos sigue funcionando perfectamente.
+*/
 
 
 
