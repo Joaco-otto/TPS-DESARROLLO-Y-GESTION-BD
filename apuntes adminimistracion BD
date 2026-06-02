@@ -1492,6 +1492,147 @@ contadores secuenciales perfectos sin huecos, sino simplemente identificadores �
 medio, la base de datos sigue funcionando perfectamente.
 */
 
+CLASE # 20 
+
+-- el vendedor no debería poder modificar clientes
+-- porque no le dimos permiso UPDATE sobre dbo.Clientes
+USE Comercio;
+GO
+UPDATE dbo.Clientes SET nombre = N'Cliente Modificado' WHERE id_cliente = 1;
+
+-- el vendedor no podría borrar ventas
+-- porque no le dimos permiso de DELETE sobre dbo.Ventas
+DELETE FROM dbo.Ventas WHERE id_venta=1;
+
+-- el usuario puede hacer lo que necesite como vendedor, pero no puede hacer cualquier cosa.
+
+-- En SQL Server, los permisos se pueden administrar con tres comandos principales:
+-- GRANT: otorga un permiso
+-- DENY: niega explícitamente un permiso
+-- REVOKE: quita un permiso otorgado o una denegación previa
+
+-- nos conectamos nuevamente como SA
+-- Aplicamos una denegación explícita directamente sobe el usuario vendedor_login
+-- Aunque el rol rol_vendedor diga teniendo un SELECT sobre Clientes, el DENY directo, bloqueará la consulta
+-- para este usario
+USE Comercio;
+GO
+DENY SELECT ON dbo.Clientes TO vendedor_login;
+GO
+
+-- no conectamos como vendedor_login
+USE Comercio;
+GO
+-- ahora esta consulta debería fallar, porque por más que el rol tenga permiso para el select, este usuario
+-- tiene un DENY directo
+SELECT * FROM dbo.Clientes;
+
+-- nos conectamos como SA
+USE Comercio;
+
+-- REVOKE quita la denegación implícita que habíamos aplicado.
+-- No estamos dando un nuevo permiso.
+-- Solo estamos eliminando el DENY directo.
+REVOKE SELECT ON dbo.Clientes FROM vendedor_login;
+-- revoke no está dando permiso, solo está quitando el DENY
+
+-- nos conectamos como vendedor_login
+-- ahora el select debería funcionar
+USE Comercio;
+SELECT * FROM dbo.Clientes;
+
+-- Con GRANT habilitamos una acción.
+-- Con DENY la bloqueamos explícitamente.
+-- Con REVOKE quitamos una configuración anterior, ya sea un permiso otorgado o una denegación.
+-- Por eso REVOKE no es lo mismo que DENY: revocar no prohíbe, simplemente elimina una regla previa.
+
+/*
+Entre otros, se pueden otorgar y denegar permisos de:
+Permiso		Permite
+SELECT		consultar
+INSERT		insertar
+UPDATE		modificar
+DELETE		borrar
+EXECUTE		ejecutar SPs o funciones
+CONTROL		control total sobre objeto
+REFERENCES	crear FK apuntando a esa tabla
+BACKUP DATABASE	realizar backups
+
+Como DDL:
+Permiso			Permite
+CREATE TABLE	crear tablas
+CREATE VIEW		crear vistas
+CREATE PROCEDURE	crear procedimientos almacenados
+CREATE FUNCTION		crear funciones
+CREATE SCHEMA	crear esquemas
+CREATE USER		crear usuarios dentro de la base
+CREATE ROLE		crear roles
+ALTER			modificar la estructura de un objeto
+Se suelen asignar especialmente para desarrolladores, equipos DBA, ambientes de testing, automatización.
+Pero en producción suele restringirse mucho porque alguien con DDL puede romper estructuras, borrar tablas, 
+alterar columnas, afectar aplicaciones.
+*/
+
+/* 
+PRINCIPIO DE MÍNIMO PRIVILEGIO Y SEPARACIÓN DE RESPONSABILIDADES
+
+El principio de mínimo privilegio indica que un usuario debe tener solamente los permisos necesarios para 
+cumplir su tarea.
+No se deben dar permisos “por las dudas”, porque eso aumenta el riesgo de errores, modificaciones indebidas o 
+pérdida de control.
+Por ejemplo, si un vendedor solo necesita consultar clientes e insertar ventas, no debería poder borrar 
+registros, modificar clientes ni administrar la base.
+También es importante separar responsabilidades. 
+No todos los perfiles hacen lo mismo:
+- un vendedor opera ventas
+- un supervisor revisa y corrige ciertos datos
+- un auditor consulta información
+- un administrador gestiona accesos y configuración
+Separar responsabilidades ayuda a proteger los datos y a reducir errores humanos.*/
+
+-- el usuario no debería poder crear tablas
+CREATE TABLE dbo.PruebaVendedor(
+	id INT
+);
+GO
+
+-- permisos a nivel columna
+-- Permitir SELECT solo sobre algunas columnas
+-- nos conectamos como sa
+USE Comercio;
+
+-- primero quitamos el SELECT general sobre toda la tabla Clientes
+REVOKE SELECT on dbo.Clientes from rol_vendedor;
+
+-- otorgamos SELECT solo sobre columnas específicas
+GRANT SELECT (id_cliente, nombre, activo)
+ON dbo.Clientes TO rol_vendedor;
+
+-- nos conectamos como vendedor_login
+USE Comercio;
+SELECT * FROM Clientes; -- error, el rol no puede ver todo 
+SELECT email FROM Clientes; -- no puede ver el campo email
+SELECT id_cliente, nombre, activo FROM Clientes;
+
+
+-- nos conectamos como sa
+-- quitamos los permisos específicos por columna
+USE Comercio;
+GO
+REVOKE SELECT (id_cliente, nombre, activo)
+ON dbo.Clientes FROM rol_vendedor;
+
+-- nos conectamos con vendedor_login
+USE Comercio;
+SELECT * FROM Clientes; -- no tiene acceso a los campos de la tabla con el SELECT
+SELECT id_cliente, nombre, activo FROM Clientes; -- ni siquiera a estos campos
+
+-- nos conectamos como sa
+USE Comercio;
+GO
+GRANT SELECT ON dbo.Clientes TO rol_vendedor;
+
+
 
 
 
