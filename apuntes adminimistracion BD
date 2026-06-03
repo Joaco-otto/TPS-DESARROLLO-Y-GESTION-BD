@@ -1632,6 +1632,961 @@ USE Comercio;
 GO
 GRANT SELECT ON dbo.Clientes TO rol_vendedor;
 
+CLASE # 21
+/*
+SEGURIDAD EN BASES DE DATOS: IDEA GENERAL
+
+La seguridad en bases de datos busca proteger la información y controlar correctamente el acceso al sistema.
+No se trata solo de poner una contraseña, sino de definir:
+• quién puede entrar
+• a qué base puede acceder
+• qué podemos hacer dentro de ella
+• cómo evitar errores o usos indebidos
+La seguridad protege los datos frente a accesos no autorizados, cambios incorrectos, borrados accidentales y 
+malas prácticas de administración.
+También ayuda a reducir el impacto de los errores humanos.
+Por ejemplo, no es lo mismo que un usuario solo pueda consultar datos, a que también pueda borrar registros o 
+modificar información sensible.
+Por eso, en un entorno profesional no conviene usar cuentas con privilegios excesivos para todo.
+Dar más permisos de los necesarios aumenta el riesgo de errores, daños y pérdida de control.
+La seguridad en bases de datos busca que cada persona o sistema acceda solo a lo que realmente necesita, de la 
+forma correcta y con el menor riesgo posible.
+
+
+AUTENTICACIÓN VS AUTORIZACIÓN
+
+En seguridad de bases de datos, autenticación y autorización no significan lo mismo.
+Autenticación es el proceso de verificar la identidad de quien intenta ingresar, es decir, demostrar quién sos.
+Autorización es el proceso de definir qué acciones puede realizar ese usuario una vez que ya ingresó, es decir, 
+decidir qué te dejan hacer.
+autenticación = entrar
+autorización = operar
+Un usuario puede autenticarse correctamente y aun así no tener permisos para trabajar sobre una base de datos o
+sobre determinados objetos.
+Por eso, poder conectarse al servidor no significa automáticamente poder consultar, insertar, modificar o borrar
+datos.
+Esta diferencia es fundamental para entender la seguridad en SQL Server.
+
+
+NIVELES DE SEGURIDAD EN SQL SERVER
+
+En SQL Server, la seguridad no se maneja en un solo nivel. Se organiza en capas o escalones.
+Los dos niveles principales son:
+• nivel servidor o instancia 
+• nivel base de datos 
+
+Seguridad a nivel servidor / instancia
+En este nivel se controla quién puede ingresar al motor de SQL Server. Es decir, primero se define si una 
+identidad puede conectarse o no al servidor.
+
+Seguridad a nivel base de datos
+Una vez que alguien puede entrar al servidor, todavía falta definir si puede trabajar dentro de una base de 
+datos específica y qué puede hacer allí.
+Por eso, tener acceso al motor no significa automáticamente tener acceso útil dentro de una base.
+
+En SQL Server, la seguridad se piensa como una cadena:
+• acceso al servidor 
+• acceso a una base 
+• permisos dentro de esa base 
+Esta separación permite administrar mejor los accesos y dar distintos alcances según la necesidad de cada 
+usuario.
+
+Comparación inicial con MySQL
+En MySQL, para muchos casos iniciales, esta separación no se percibe tanto y suele parecer más directo: se crea
+un usuario y se le dan permisos.
+En SQL Server, en cambio, esta diferencia entre nivel servidor y nivel base está más marcada y es fundamental 
+entenderla.
+
+
+LOGIN VS USER
+
+En SQL Server, login y user no son lo mismo.
+
+Un login es una identidad que existe a nivel servidor o instancia.
+Sirve para poder conectarse al motor de SQL Server.
+login = permiso para entrar al servidor
+
+Un user es una identidad que existe dentro de una base de datos específica.
+Sirve para que ese acceso tenga sentido dentro de esa base.
+user = identidad dentro de una base
+
+En muchos casos, un login se vincula con un user dentro de una base determinada.
+Eso significa que:
+• el login permite entrar al servidor 
+• el user permite existir y operar dentro de una base 
+Por eso, un mismo login puede conectarse al servidor, pero no tener acceso útil dentro de una base si no está 
+asociado a un user en esa base.
+
+En SQL Server, entrar al motor y poder trabajar dentro de una base son dos cosas distintas.
+
+Cadena lógica de acceso, la seguridad se podría pensar así:
+• servidor 
+• login 
+• base 
+• user 
+• rol 
+• permiso final 
+
+Primero se entra al servidor, después se define la identidad dentro de la base, luego se asignan roles y 
+finalmente se llega a los permisos concretos.
+*/
+
+create database Comercio;
+GO
+
+use Comercio;
+GO
+
+create table dbo.Clientes(
+	id_cliente int identity(1, 1),
+	nombre nvarchar(100) not null,
+	email nvarchar(150) not null,
+	activo bit not null constraint DF_Clientes_activo default 1,
+	fecha_alta datetime2 not null constraint DF_Clientes_fechaAlta default sysdatetime(),
+	constraint PK_Clientes primary key (id_cliente)
+);
+GO
+
+create table dbo.Ventas(
+	id_venta int identity(1, 1),
+	id_cliente int not null,
+	fecha_venta datetime2 not null constraint DF_Ventas_fechaVenta default sysdatetime(),
+	importe decimal(10,2) not null constraint CHK_Ventas_Importe check (importe>0),
+	observacion nvarchar(250),
+	constraint PK_Ventas primary key (id_venta),
+	constraint FK_Ventas_Clientes foreign key (id_cliente) references dbo.Clientes(id_cliente)
+);
+GO
+
+select db_name(); -- vemos en qué base estamos parados
+
+
+-- -e "MSSQL_COLLATION=SQL_Latin1_General_CP1_CI_AS"
+-- configuramos la collation del servidor con docker run
+-- si no ponemos nada, por defecto queda en SQL_Latin1_General_CP1_CI_AS
+-- desde compose lo ponemos dentro de los environment
+-- MSSQL_COLLATION: "SQL_Latin1_General_CP1_CI_AS"
+-- select serverproperty('collation') as collationServer;
+-- con esa query vemos la collation del servidor.
+
+-- creamos tablas pertenecientes al esquema dbo que es el esquema por defecto, lo nombramos solo por claridad
+
+-- bit es un tipo de dato entero muy chico que sirve para guardar 1, 0 o NULL. SQL Server lo usa habitualmente
+-- para representar valores booleanos.
+
+-- una constraint es una regla que la base impone sobre los datos. Ejemplos: primary key, foreign key, check, etc
+-- si declaramos una constraint sin especificar el nombre, SQL Server le pone uno por defecto, que puede ir
+-- variando según el entorno. Al ponerle uno específico nosotros, podemos ubicarla fácilmente.
+-- Los nombres de las constraint deben respetar las reglas de los identificadores. Por lo general van a comenzar 
+-- con: PK_ FK_ DF_ CHK_ UQ_
+
+-- datetime2 es un tipo de dato de fecha y hora. Es una extensión de datetime, con rango de fechas más grandes,
+-- más precisión fraccionaria por defecto y precisión configurable.
+-- Actualmente es la versión más moderna y flexible para guardar la fecha y la hora.
+-- sysdatetime() es una función del sistema que devuelve la fecha y la hora actual del equipo en donde corre
+-- la instancia de SQL Server y lo devuelve como un datetime2()
+
+-- varchar almacena un texto de longitud variable NO UNICODE, nvarchar almacena un texto de longitud variable
+-- UNICODE.
+-- varchar no garantiza representar correctamente cualquier caracter de cualquier idioma. NVARCHAR sí, y está
+-- pensado para eso.
+
+-- insertamos 5 registros en cada tabla
+INSERT INTO dbo.Clientes (nombre, email) VALUES
+(N'Juan Pérez', N'juan.perez@gmail.com'),
+(N'María García', N'maria.garcia@gmail.com'),
+(N'Carlos Lopez', N'carlos.lopez@gmail.com'),
+(N'Ana Martinez', N'ana.martinez@gmail.com'),
+(N'Luis Torres', N'luis.torres@gmail.com');
+-- la N adelante del valor del tipo NVARCHAR indica que la cadena es del tipo UNICODE. En campos NVARCHAR es
+-- obligatorio ponerlo si queremos admitir caracteres especiales o múltiples idiomas. Usarla siempre garantiza
+-- que los datos se guarden sin problemas, sin importar los caracteres que tengan. Es una buena práctica para
+-- evitar errores de guardado. 
+
+INSERT INTO dbo.Ventas (id_cliente, importe, observacion) VALUES
+(1, 150.50, N'Venta minorista estándar'),
+(1, 45.00, N'Compra de accesorios'),
+(2, 1200.00, N'Pedido al por mayor'),
+(4, 89.99, N'Promoción de temporada'),
+(5, 210.75, NULL);
+
+-- Creamos un login
+-- El login existe a nivel servidor/instancia. No vive dentro de la base de datos.
+-- Sirve para autenticarse y conectarse al motor.
+USE master; -- no es estrictamente obligatorio porque el login es de nivel servidor, no de nivel base.
+-- pero es una buena práctica para scripts
+
+CREATE LOGIN vendedor_login -- este nombre representa la identidad con la que alguien o algo se va a conectar
+WITH	password='Ventas$1'; -- como estamos utilizando SQL Authentication, este login necesita una contraseña
+
+-- verificamos que el login existe:
+SELECT	name, -- es el nombre del login
+		type_desc, -- describe el tipo de identidad
+		create_date, -- fecha y hora en la que se creó el login
+		create_date AT TIME ZONE 'UTC' AT TIME ZONE 'Argentina Standard Time' AS Hora_Local
+FROM	sys.server_principals -- devuelve principales de seguridad a nivel servidor
+WHERE	name='vendedor_login';
+-- sys.server_principals es una vista del sistema que contiene un fila por cada identidad que tiene permiso
+-- para conectarse al servidor (no solo a una base de datos específica).
+-- Incluye logins de SQL, cuentas de Windows, grupos y roles de servidor.
+-- En SQL Server, un "principal" es cualquier entidad que puede solicitar acceso a los recursos.
+
+-- NOS CONECTAMOS CON vendedor_login
+-- EL login ya existe, pero todavía no tiene USER en Comercio.
+USE Comercio;
+
+-- esta consulta en SQL Server devuelve información contextual de la sesión actual
+SELECT	SUSER_SNAME() AS Login_Actual, -- nombre del inicio de la sesión actual
+		USER_NAME() AS Usuario_En_La_Base, -- nombre del usuario de la base de datos
+		DB_NAME() AS Base_Actual; -- nombre de la base de datos actual
+-- el usuario que muestra es un usuario invitado "guest", es un usuario especial.
+-- En este ejemplo, el login pudo entrar a master usando el usuario especial guest.
+-- Eso no significa que tenga un user propio ni privilegios importantes en la base.
+-- En cambio, no puede entrar a Comercio, porque en esa base no tiene user creado para ese login.
+-- Si guest estuviera habilitado con CONNECT en Comercio, podría entrar como guest también.
+
+-- logueados nuevamente como sa, nos paramos dentro de la BD Comercio
+USE Comercio;
+
+-- creamos el usuario en la base Comercio
+CREATE USER vendedor_login
+FOR	LOGIN vendedor_login
+WITH DEFAULT_SCHEMA = dbo;
+
+-- verificamos el usuario creado
+SELECT	name,
+		type_desc,
+		default_schema_name,
+		create_date AT TIME ZONE 'UTC' AT TIME ZONE 'Argentina Standard Time' AS Hora_Local
+FROM	sys.database_principals
+WHERE	name = 'vendedor_login';
+
+-- intentamos entrar a la base nuevamente con vendedor_login
+USE Comercio; -- entró correctamente
+
+-- intentamos consultar una tabla
+select * from dbo.Clientes;
+-- da error porque faltan permisos
+
+-- distintas formas de listar las tablas de una base de datos
+-- Usando INFORMATION_SCHEMA (standard SQL)
+-- Esta consulta devuelve los nombres de todas las tablas de usuario de la base de datos en donde se ejecute
+SELECT	TABLE_NAME
+FROM	INFORMATION_SCHEMA.TABLES
+WHERE	TABLE_TYPE = 'BASE TABLE';
+
+-- Usando vistas de catálogo (específico de SQL Server)
+-- Es la opción recomendada por Microsoft para obtener más detalles técnicos del objeto
+SELECT	name
+FROM	sys.tables; -- solo muestra tablas de usuario
+
+-- Usando el procedimiento almacenado del sistema
+-- Es un comando rápido para ver objetos de la base actual.
+EXEC sp_tables; -- muestra todos los objetos
+EXEC sp_tables @table_type = "'TABLE'";
+
+-- De ninguna manera podemos ver las tablas, justamente porque a vendedor_login le faltan permisos.
+
+-- Login y User no son lo mismo.
+-- El login es a nivel servidor, se utiliza para autenticarse y acceder a la instancia de SQL Server.
+-- El user es a nivel base, se crea para un login en una base de datos específica para dar autorización y permisos
+-- Mismo nombre no significa mismo objeto. Aunque ambos se llamen igual siguen siendo objetos distintos.
+-- La clave es el mapeo, "FOR LOGIN" es lo que enlaza ambos niveles.
+-- Crear un login y un user no resuelve los permisos.
+-- La lógica del modelo de seguridad sería primero crear la identidad para entrar al servidor (login), luego la
+-- identidad dentro de una base (user) y luego definir qué puede hacer ese usuario con las tablas u otros objetos.
+
+/*	===========================================
+				Roles y permisos
+	=========================================== */
+
+/*
+	Un rol es un agrupador de permisos. En vez de darle permisos directamente a cada usuario, creamos un rol
+	según el perfil de trabajo y agregamos usuarios ese rol.
+	Luego, en vez de repetir permisos usuario por usuario, asignamos permisos al rol. Esto permite administrar
+	los accesos de forma más ordenada, clara y más fácil de mantener.
+	En el mundo real y profesional de las bases de datos, los permisos se dan y se quitan casi exclusivamente
+	a los roles.
+	La lógica sería LOGIN → USER → ROL → PERMISOS
+	Importante: no damos permisos por comodidad. Damos solo lo que el perfil necesita para trabajar.
+*/
+
+/*
+En general, es mejor otorgar permisos a roles y no directamente a usuarios.
+Los permisos directos pueden existir, pero conviene reservarlos para casos puntuales o excepciones justificadas.
+Podríamos ejecutar un comando como GRANT SELECT ON clientes TO usuario_juan;.El problema: No es escalable. Si la
+empresa crece y contrata a 50 personas en el área de ventas, tendríamos que escribir scripts de permisos 
+individuales para cada uno. Si el día de mañana cambia una regla del negocio, tendríamos que buscar y modificar
+los permisos de los 50 usuarios uno por uno. Es un caos para auditar y mantener.
+Asignar permisos a un Rol es la práctica recomendada. Creamos un rol, le otorgamos los permisos una sola vez 
+(GRANT SELECT ON clientes TO nombre_del_rol;) y luego simplemente agregamos a los usuarios dentro de ese rol.
+Este enfoque se conoce como RBAC (Role-Based Access Control o Control de Acceso Basado en Roles) y tiene tres 
+ventajas particulares:
+- Administración centralizada: Si el departamento de ventas necesitara ahora permiso para insertar datos, 
+modificamos el rol una sola vez y automáticamente los 50 usuarios reciben el permiso.
+- Alta y baja de personal inmediata: Si llega un empleado nuevo, solo lo agregamos al rol. Si se va de la 
+empresa, lo quitamos del rol y pierde todo al instante. No quedan permisos dando vueltas olvidados.
+- Orden visual en Docker y producción: Al revisar las vistas como sys.database_principals, vamos a ver una 
+estructura limpia donde los usuarios son solo miembros de contenedores lógicos (DATABASE_ROLE).
+
+Uno de los pocos escenarios donde se justifica darle un permiso directo a un usuario (o más comúnmente un DENY) 
+es para una excepción puntual, una restricción explícita o un caso temporal. Por ejemplo: "Todos los vendedores
+pueden ver la tabla de clientes, excepto Juan, porque está bajo investigación". Ahí le aplicaríamos un DENY 
+directo a Juan, el cual ganará sobre el rol.
+*/
+
+-- nos conectamos como SA
+-- Vamos a trabajar dentro de la base comercio
+-- Los roles de base de datos existen dentro de una base específica
+USE Comercio;
+GO
+
+-- comprobamos login, user y base
+SELECT	SUSER_NAME() [login],
+		USER_NAME() [user],
+		DB_NAME() [base];
+
+-- Creamos un rol para el perfil vendedor.
+-- Un rol es un agrupador de permisos.
+-- En lugar de dar permisos directamente al usuario, se los vamos a dar al rol.
+CREATE ROLE rol_vendedor; -- el rol solo está creado, no tiene permisos ni miembros
+
+-- verificamos que el rol fue creado dentro de la base Comercio
+SELECT		NAME,
+			TYPE_DESC, -- muestra la descripción textual del tipo de principal de seguridad dentro de la BD
+			CREATE_DATE,
+			DB_NAME() [base actual]
+FROM		sys.database_principals -- muestra las identidades de seguridad dentro de la base actual
+WHERE		NAME = 'rol_vendedor';
+
+-- agregamos al user vendedor_login al rol rol_vendedor
+ALTER ROLE rol_vendedor ADD MEMBER vendedor_login;
+GO
+
+-- Verificamos qué usuarios pertenecen al rol rol_vendedor
+-- A nivel técnico, la que sigue es una consulta estándar para auditar la asignación de permisos por roles
+SELECT		rol.name [rol],
+			usuario.name [usuario],
+			drm.*
+FROM		sys.database_role_members [drm]
+JOIN		sys.database_principals [rol] ON drm.role_principal_id=rol.principal_id
+JOIN		sys.database_principals [usuario] ON drm.member_principal_id=usuario.principal_id
+WHERE		rol.name = 'rol_vendedor';
+
+-- Utilizamos dos alias para nombrar al mismo objeto. Lo hacemos cuando necesitamos cruzar una tabla consigo 
+-- misma porque la información que buscamos está guardada en la misma lista, pero en filas separadas. 
+-- Esta técnica se conoce en SQL como un Autojoin (o autoasociación). 
+-- En SQL Server, tanto los Roles como los Usuarios son considerados "Entidades de Seguridad" (Principals), 
+-- por lo que están guardados juntos en la misma tabla: sys.database_principals
+-- Para conectarlos, existe una tabla intermedia llamada sys.database_role_members que solo guarda números de 
+-- identificación (IDs). Tiene una columna para el ID del Rol (role_principal_id)
+-- Tiene otra columna para el ID del Miembro/Usuario (member_principal_id). 
+-- Como los nombres de texto tanto del rol como del usuario están en la misma tabla (sys.database_principals),
+-- tenemos que llamar a esa tabla dos veces en la misma consulta. Para que el motor de SQL no se confunda y sepa
+-- a cuál de las dos llamadas nos referimos en cada paso, estás obligado a ponerles alias diferentes:
+-- rol: Es la primera copia de la tabla. La usamos exclusivamente para buscar los datos del grupo o rol.
+-- usuario: Es la segunda copia de la tabla. La usamos exclusivamente para buscar los datos de las personas o 
+-- miembros que están metidos en ese grupo
+
+-- otorgamos permisos al rol
+-- En una administración ordenada, conviene otorgar permisos al rol, no directamente a cada usuario.
+-- Los permisos indican qué acciones puede realizar un usuario o rol sobre los objetos de la base.
+-- GRANT es el comando que se usa para dar permisos
+GRANT SELECT ON dbo.Clientes TO rol_vendedor; -- puede consultar la tabla Clientes
+GRANT SELECT ON dbo.Ventas TO rol_vendedor; -- puede consultar la tabla Ventas
+GRANT INSERT ON dbo.Ventas TO rol_vendedor; -- puede insertar nuevas ventas
+-- con esto, estamos aplicando el principio de mínimo privilegio. Ya que no le dimos permisos para UPDATE,
+-- DELETE, ni permisos sobre toda la base ni permisos administrativos.
+
+-- ahora nos conectamos nuevamente con vendedor_login para probar
+USE Comercio;
+
+SELECT	SUSER_NAME() [login],
+		USER_NAME() [user],
+		DB_NAME() [base];
+
+SELECT * FROM dbo.Clientes;
+-- el rol_vendedor ahora puede consultar la tabla Clientes
+
+SELECT * FROM dbo.Ventas;
+-- el rol_vendedor ahora puede consultar la tabla Ventas
+
+INSERT INTO dbo.Ventas (id_cliente, importe, observacion) VALUES (1, 1200.00, N'Venta cargada por vendedor');
+-- el rol_vendedor ahora puede insertar una venta
+
+-- comprobamos la venta ingresada
+SELECT * FROM dbo.Ventas;
+
+/*
+A partir de la versión 2012, SQL Server introdujo una mejora de rendimiento: la caché de identidad.
+
+Para que los INSERT sean mucho más rápidos y no tengan que escribir en el disco duro cada vez que generan un 
+nuevo ID, SQL Server preasigna (guarda en la memoria RAM) "bloques" de números.
+
+Para un tipo de dato INT, el tamaño de este bloque en caché es de 1000 números.
+
+Si por algún motivo el servicio de SQL Server se reinicia (por ejemplo, si apagás la computadora, o si detenés 
+el contenedor de Docker), todos los números que estaban en la memoria RAM esperando ser usados se pierden.
+
+Cuando vuelves a encender el motor y hacés un nuevo INSERT, SQL Server dice: "Perdí la cuenta exacta en la 
+memoria, así que para evitar duplicados, arranco el siguiente bloque sumando 1000 al último valor base".
+
+En el mundo de las bases de datos relacionales, no es un problema. Los IDs no están diseñados para ser 
+contadores secuenciales perfectos sin huecos, sino simplemente identificadores únicos. Si faltan números en el 
+medio, la base de datos sigue funcionando perfectamente.
+*/
+
+-- el vendedor no debería poder modificar clientes
+-- porque no le dimos permiso UPDATE sobre dbo.Clientes
+USE Comercio;
+GO
+UPDATE dbo.Clientes SET nombre = N'Cliente Modificado' WHERE id_cliente = 1;
+
+-- el vendedor no podría borrar ventas
+-- porque no le dimos permiso de DELETE sobre dbo.Ventas
+DELETE FROM dbo.Ventas WHERE id_venta=1;
+
+-- el usuario puede hacer lo que necesite como vendedor, pero no puede hacer cualquier cosa.
+
+-- En SQL Server, los permisos se pueden administrar con tres comandos principales:
+-- GRANT: otorga un permiso
+-- DENY: niega explícitamente un permiso
+-- REVOKE: quita un permiso otorgado o una denegación previa
+
+-- nos conectamos nuevamente como SA
+-- Aplicamos una denegación explícita directamente sobe el usuario vendedor_login
+-- Aunque el rol rol_vendedor diga teniendo un SELECT sobre Clientes, el DENY directo, bloqueará la consulta
+-- para este usario
+USE Comercio;
+GO
+DENY SELECT ON dbo.Clientes TO vendedor_login;
+GO
+
+-- no conectamos como vendedor_login
+USE Comercio;
+GO
+-- ahora esta consulta debería fallar, porque por más que el rol tenga permiso para el select, este usuario
+-- tiene un DENY directo
+SELECT * FROM dbo.Clientes;
+
+-- nos conectamos como SA
+USE Comercio;
+
+-- REVOKE quita la denegación implícita que habíamos aplicado.
+-- No estamos dando un nuevo permiso.
+-- Solo estamos eliminando el DENY directo.
+REVOKE SELECT ON dbo.Clientes FROM vendedor_login;
+-- revoke no está dando permiso, solo está quitando el DENY
+
+-- nos conectamos como vendedor_login
+-- ahora el select debería funcionar
+USE Comercio;
+SELECT * FROM dbo.Clientes;
+
+-- Con GRANT habilitamos una acción.
+-- Con DENY la bloqueamos explícitamente.
+-- Con REVOKE quitamos una configuración anterior, ya sea un permiso otorgado o una denegación.
+-- Por eso REVOKE no es lo mismo que DENY: revocar no prohíbe, simplemente elimina una regla previa.
+
+/*
+Entre otros, se pueden otorgar y denegar permisos de:
+Permiso		Permite
+SELECT		consultar
+INSERT		insertar
+UPDATE		modificar
+DELETE		borrar
+EXECUTE		ejecutar SPs o funciones
+CONTROL		control total sobre objeto
+REFERENCES	crear FK apuntando a esa tabla
+BACKUP DATABASE	realizar backups
+
+Como DDL:
+Permiso			Permite
+CREATE TABLE	crear tablas
+CREATE VIEW		crear vistas
+CREATE PROCEDURE	crear procedimientos almacenados
+CREATE FUNCTION		crear funciones
+CREATE SCHEMA	crear esquemas
+CREATE USER		crear usuarios dentro de la base
+CREATE ROLE		crear roles
+ALTER			modificar la estructura de un objeto
+Se suelen asignar especialmente para desarrolladores, equipos DBA, ambientes de testing, automatización.
+Pero en producción suele restringirse mucho porque alguien con DDL puede romper estructuras, borrar tablas, 
+alterar columnas, afectar aplicaciones.
+*/
+
+/* 
+PRINCIPIO DE MÍNIMO PRIVILEGIO Y SEPARACIÓN DE RESPONSABILIDADES
+
+El principio de mínimo privilegio indica que un usuario debe tener solamente los permisos necesarios para 
+cumplir su tarea.
+No se deben dar permisos “por las dudas”, porque eso aumenta el riesgo de errores, modificaciones indebidas o 
+pérdida de control.
+Por ejemplo, si un vendedor solo necesita consultar clientes e insertar ventas, no debería poder borrar 
+registros, modificar clientes ni administrar la base.
+También es importante separar responsabilidades. 
+No todos los perfiles hacen lo mismo:
+- un vendedor opera ventas
+- un supervisor revisa y corrige ciertos datos
+- un auditor consulta información
+- un administrador gestiona accesos y configuración
+Separar responsabilidades ayuda a proteger los datos y a reducir errores humanos.*/
+
+-- el usuario no debería poder crear tablas
+CREATE TABLE dbo.PruebaVendedor(
+	id INT
+);
+GO
+
+-- permisos a nivel columna
+-- Permitir SELECT solo sobre algunas columnas
+-- nos conectamos como sa
+USE Comercio;
+
+-- primero quitamos el SELECT general sobre toda la tabla Clientes
+REVOKE SELECT on dbo.Clientes from rol_vendedor;
+
+-- otorgamos SELECT solo sobre columnas específicas
+GRANT SELECT (id_cliente, nombre, activo)
+ON dbo.Clientes TO rol_vendedor;
+
+-- nos conectamos como vendedor_login
+USE Comercio;
+SELECT * FROM Clientes; -- error, el rol no puede ver todo 
+SELECT email FROM Clientes; -- no puede ver el campo email
+SELECT id_cliente, nombre, activo FROM Clientes;
+
+
+-- nos conectamos como sa
+-- quitamos los permisos específicos por columna
+USE Comercio;
+GO
+REVOKE SELECT (id_cliente, nombre, activo)
+ON dbo.Clientes FROM rol_vendedor;
+
+-- nos conectamos con vendedor_login
+USE Comercio;
+SELECT * FROM Clientes; -- no tiene acceso a los campos de la tabla con el SELECT
+SELECT id_cliente, nombre, activo FROM Clientes; -- ni siquiera a estos campos
+
+-- nos conectamos como sa
+USE Comercio;
+GO
+GRANT SELECT ON dbo.Clientes TO rol_vendedor; -- le volvemos a dar permisos para el select de Clientes
+
+-- verificar qué permisos tiene para la tabla
+-- vamos a usar un procedimiento almacenado del sistema que sirve para consultar de forma rápida los permisos
+-- explícitos (otorgados o denegados) que tienen los usuarios o roles sobre los objetos de la base de datos.
+EXEC sp_helprotect Clientes; -- vemos todo
+EXEC sp_helprotect Clientes, rol_vendedor;
+-- Columnas:
+-- Grantee: el usuario o rol que recibió el permiso
+-- Grantor: quien otorgó el permiso (generalmente es el dbo o el administrador)
+-- Accion: es la acción que se controla (SELECT, INSERT, UPDATE, DELETE, EXECUTE). SI dice Grant With Grant, 
+--			significa que tiene el WITH GRANT OPTION.
+-- ProtectType: indica el estado del permiso: GRANT → si tiene permiso. DENY → si tiene prohibido el acceso.
+-- Column: indica si el permiso aplica a toda la tabla o únicamente a columnas específicas de la tabla.
+--			(ALL + New) significa que el permiso cubre a toda la tabla por igual (todas las columnas actuales y
+--			las que se agreguen en el futuro). Es la más común.
+--			El nombre de una columna (por ejemplo, nombre): significa que el permiso es específico. El usuario
+--			solo puede hacer esa acción en esa columna en particular.
+
+-- negamos explícitamente el SELECT sobre la columna email.
+DENY SELECT (email) ON dbo.Clientes TO rol_vendedor;
+
+-- nos conectamos como vendedor_login
+USE Comercio;
+
+-- esta consulta debería fallar porque intenta leer el email y tiene el permiso denegado
+SELECT email FROM dbo.Clientes; 
+
+-- esta consulta también debería fallar, porque el * incluye el campo email
+SELECT * FROM dbo.Clientes;
+
+-- esto debería funcionar porque no incluye el campo de email
+SELECT id_cliente, nombre, activo, fecha_alta FROM dbo.Clientes;
+
+-- nos conectamos como sa
+use Comercio;
+
+-- quitamos el DENY, el rol queda con permisos para poder volver a ver el campo de email, ya que tiene
+-- un GRANT sobre la tabla completa.
+REVOKE SELECT (email) ON dbo.Clientes FROM rol_vendedor;
+
+-- lo mismo que hicimos con el select, podemos hacerlo con el UPDATE
+
+
+/* 
+============================================================
+		VISTA COMO CAPA DE SEGURIDAD
+============================================================
+
+Otra forma profesional de restringir el acceso a datos suele ser utilizar una vista.
+Una vista es un objeto de base de datos basado en una consulta SELECT.
+Es una tabla virtual cuyo contenido, filas y columnas, está definido por una consulta. 
+Una vista no guarda los datos como una tabla física: los datos vienen de las tablas referenciadas y se producen
+dinámicamente cuando se consulta la vista. Salvo que sean vistas indexadas.
+La vista sería una ventana preparada para un perfil determinado: muestra solo lo que ese perfil necesita ver.
+Para qué sirve una vista:
+    - Simplificar consultas. En vez de hacer siempre una consulta larga, guardás la consulta como vista.
+    - Ocultar complejidad. El usuario consulta una vista simple, sin tener que saber cómo se unen las tablas 
+	por debajo.
+    - Mostrar solo ciertas columnas. Por ejemplo, mostrar clientes sin email.
+    - Mostrar solo ciertas filas. Por ejemplo, mostrar solo clientes activos.
+    - Servir como capa de seguridad. Puede usarse como mecanismo de seguridad, permitiendo acceso a datos a 
+	través de la vista sin otorgar permisos directos sobre las tablas base.
+
+Algunas vistas simples también permiten INSERT, UPDATE o DELETE. Cuando eso ocurre, la modificación no se guarda
+en la vista, sino en la tabla base. Esto solo funciona en casos simples, por ejemplo una vista basada en una 
+sola tabla y columnas directas. Si la vista tiene joins, agrupaciones, cálculos o consultas complejas, 
+normalmente no se puede modificar de manera directa o requiere mecanismos más avanzados.
+
+Una vista indexada es una vista que, además de guardar su definición como consulta, tiene un índice creado 
+sobre ella.
+A diferencia de una vista común, que no guarda sus propios datos, una vista indexada puede guardar físicamente 
+el resultado de la consulta para mejorar ciertas lecturas.
+*/
+
+-- Nos conectamos como sa
+USE Comercio;
+
+-- creamos una vista que expone solo las columas permitidas para el perfil vendedor (no puede ver el email)
+CREATE VIEW dbo.v_CLientesVendedor AS
+SELECT	id_cliente,
+		nombre,
+		activo,
+		fecha_alta
+FROM	dbo.Clientes;
+
+-- quitamos el SELECT directo sobre la tabla Clientes, para que el vendedor no pueda consultar la tabla completa.
+REVOKE SELECT on dbo.Clientes FROM rol_vendedor;
+
+-- damos permiso de lectura solo sobre la vista
+GRANT SELECT on dbo.v_ClientesVendedor TO rol_vendedor;
+
+-- nos conectamos como vendedor_login
+USE Comercio;
+
+-- esta consulta debería fallar porque no tiene permiso para ver la tabla Clientes
+SELECT * FROM dbo.Clientes;
+
+-- esta consulta funciona porque estamos accediendo a la vista en donde tenemos permisos de GRANT
+SELECT * FROM v_CLientesVendedor;
+
+CLASE # 21
+USE Comercio;
+
+
+/*
+Si además otorgáramos UPDATE, INSERT o DELETE sobre la vista, el usuario podría modificar la tabla real a través
+de la vista. 
+Por eso una vista no implica automáticamente solo lectura; depende de los permisos que concedamos.
+
+UPDATE sobre la vista
+GRANT UPDATE ON dbo.v_ClientesVendedor TO rol_vendedor;
+
+Si la vista es simple (basada en una sola tabla y sin agregaciones, GROUP BY, DISTINCT, etc.), SQL Server 
+permite actualizar los datos de la tabla subyacente a través de la vista.
+Por ejemplo:
+UPDATE dbo.v_ClientesVendedor
+SET nombre = 'Juan Pérez'
+WHERE id_cliente = 1;
+
+Modificará realmente dbo.Clientes.nombre Aunque el usuario no tenga permiso directo sobre la tabla.
+El usuario del rol puede modificar solo las columnas expuestas por la vista.
+id_cliente
+nombre
+activo
+
+Entonces podría hacer:
+UPDATE dbo.v_ClientesVendedor
+SET activo = 0
+WHERE id_cliente = 1;
+
+Pero no podría hacer:
+UPDATE dbo.v_ClientesVendedor
+SET email = 'nuevo@mail.com'
+WHERE id_cliente = 1;
+
+Porque la columna email ni siquiera existe en la vista.
+
+DELETE sobre la vista
+GRANT DELETE ON dbo.v_ClientesVendedor TO rol_vendedor;
+
+Entonces podría ejecutar:
+DELETE FROM dbo.v_ClientesVendedor
+WHERE id_cliente = 1;
+
+Y el registro se eliminaría realmente de dbo.Clientes.
+No se elimina de la vista. Se elimina de la tabla física.
+
+INSERT sobre la vista
+GRANT INSERT ON dbo.v_ClientesVendedor TO rol_vendedor;
+
+Podría intentar:
+INSERT INTO dbo.v_ClientesVendedor (nombre, activo) VALUES ('Nuevo Cliente', 1);
+
+SQL Server intentará insertar en dbo.Clientes. Pero acá depende de cómo esté definida la tabla.
+Si existen columnas obligatorias que no aparecen en la vista, como por ejemplo email NVARCHAR(100) NOT NULL 
+(si el campo fuera NOT NULL) entonces fallará porque no puede proporcionar un valor para ellas.
+
+Una vista no es solo una consulta guardada. Una vista también puede actuar como una capa de seguridad.
+
+Por ejemplo, como lo venimos usando en nuestro ejemplo:
+Vista de solo lectura
+CREATE VIEW dbo.v_ClientesVendedor
+AS
+SELECT
+    id_cliente,
+    nombre,
+    activo
+FROM dbo.Clientes;
+
+Y solo:
+GRANT SELECT
+
+Con eso el vendedor puede consultar pero no modificar.
+
+Vista actualizable → GRANT UPDATE → Ahora el vendedor puede modificar los datos visibles.
+
+Vista eliminable → GRANT DELETE → Ahora puede borrar filas reales de la tabla.
+
+Existe una opción llamada WITH CHECK OPTION
+
+Ejemplo:
+CREATE VIEW dbo.vw_ClientesActivos
+AS
+SELECT *
+FROM dbo.Clientes
+WHERE activo = 1
+WITH CHECK OPTION;
+
+Esto obliga a que cualquier UPDATE realizado a través de la vista siga cumpliendo el filtro.
+
+Sin CHECK OPTION:
+UPDATE dbo.vw_ClientesActivos
+SET activo = 0
+WHERE id_cliente = 1;
+
+El cliente desaparece de la vista porque deja de cumplir el filtro.
+
+Con CHECK OPTION:
+UPDATE dbo.vw_ClientesActivos
+SET activo = 0
+WHERE id_cliente = 1;
+
+SQL Server lo rechaza.
+*/
+
+
+/*
+El objetivo no es que el usuario pueda hacer todo.
+El objetivo es que pueda hacer correctamente su trabajo.
+
+Dar permisos de más puede provocar:
+- modificaciones accidentales
+- borrados indebidos
+- pérdida de control
+- dificultad para diagnosticar incidentes
+- mayor impacto ante un error humano
+
+Por eso se aplica el principio de mínimo privilegio: dar solo lo necesario.
+Un buen diseño de seguridad no es el que evita todos los errores dando permisos totales. 
+Es el que permite trabajar correctamente sin exponer la base a riesgos innecesarios.
+*/
+
+
+
+
+/* ============================================================
+   DIAGNÓSTICO DE ERRORES Y TRAZABILIDAD BÁSICA
+   ============================================================
+
+   Cuando un usuario tiene un problema, no debemos resolverlo otorgando permisos de más.
+
+   Primero hay que diagnosticar:
+
+   1. ¿Puede conectarse?
+   2. ¿Está usando el login correcto?
+   3. ¿Está en la base correcta?
+   4. ¿Tiene user en esa base?
+   5. ¿Pertenece al rol correcto?
+   6. ¿Tiene permisos suficientes?
+   7. ¿Existe un DENY explícito?
+
+   Además de diagnosticar, en administración necesitamos poder revisar qué pasó. Eso es trazabilidad.
+   La trazabilidad permite revisar qué pasó, cuándo ocurrió y qué cambio se realizó.
+*/
+
+/* ============================================================
+			VERIFICAR CONTEXTO DE CONEXIÓN
+   ============================================================*/
+
+-- nos conectamos como vendedor login
+USE Comercio;
+
+SELECT	ORIGINAL_LOGIN() as login_original,
+		SUSER_SNAME() as login_actual,
+		USER_NAME() as usuario_en_la_base, -- si aparece guest, en esa base el usuario no tiene user propio
+		DB_NAME() as base_actual;
+
+
+/*
+En SQL Server, ORIGINAL_LOGIN() devuelve el login con el que se abrió originalmente la sesión. 
+Es útil para trazabilidad porque permite saber qué cuenta inició la conexión, aunque luego el código se ejecute
+bajo otro contexto mediante EXECUTE AS.
+En cambio, SUSER_SNAME() devuelve el login correspondiente al contexto de seguridad actual. 
+Por eso, si durante una sesión se cambia temporalmente el contexto de ejecución, SUSER_SNAME() puede mostrar el 
+login impersonado, mientras que ORIGINAL_LOGIN() conserva el login inicial.
+Esto es muy útil para auditoría, pero tiene una limitación importante: si varias personas usan la misma cuenta 
+compartida, ORIGINAL_LOGIN() solo mostrará esa cuenta compartida, no a la persona real. Por eso, en entornos 
+profesionales conviene evitar cuentas compartidas y complementar la trazabilidad con auditoría, triggers, logs 
+de aplicación o SESSION_CONTEXT() cuando corresponde.
+*/
+
+/* ============================================================
+			PROBAR UNA ACCIÓN NO PERMITIDA
+   ============================================================*/
+
+-- Esta query debería fallar porque el rol_vendedor no tiene permiso de UPDATE sobre Clientes
+UPDATE dbo.Clientes
+SET nombre = N'Cliente modificado'
+WHERE id_cliente = 1;
+-- The UPDATE permission was denied on the object 'Clientes', database 'Comercio', schema 'dbo'.
+-- No es un error de autenticación, el usuario sí pudo entrar.
+-- Este error es un problema de autorización: el usuario pudo entrar a la base, pero no tiene permiso para 
+-- realizar esa acción en la tabla.
+
+
+/* ============================================================
+							DIAGNÓSTICO
+   ============================================================*/
+
+/* ============================================================
+			REVISAR PERMISOS EFECTIVOS DEL USUARIO ACTUAL
+   ============================================================*/
+
+-- Permisos efectivos a nivel base de datos
+SELECT *
+FROM fn_my_permissions(NULL, 'DATABASE') -- NULL representa a la base actual
+ORDER BY permission_name;
+
+/* 
+La función fn_my_permissions devuelve los permisos efectivos del usuario actual sobre la base de datos actual.
+Los permisos efectivos son los permisos que realmente aplican para esa sesión, considerando lo que recibe el 
+usuario directamente y lo que recibe por roles.
+Recibe 2 parámetros: 
+	** securable_name (Nombre del objeto protegido). Es el nombre del elemento del cual queremos revisar los 
+	permisos (tabla, vista, base de datos o el propio servidor). El Tipo de dato es sysname (un tipo de texto 
+	interno de SQL Server para nombres de objetos). Si el segundo parámetro indica que estamos revisando los 
+	permisos de toda la base de datos o de todo el servidor, este primer parámetro se debe pasar como NULL.
+	** securable_class (Clase o tipo de objeto). Es una palabra clave en mayúsculas que le indica a SQL Server 
+	a qué categoría pertenece el objeto que pusimos en el primer parámetro. El tipo de dato es nvarchar(60). 
+	Los valores más comunes son:
+		* 'OBJECT': Se usa para tablas, vistas, funciones o procedimientos almacenados (Ej: 'dbo.Clientes').
+		* 'DATABASE': Se usa para revisar los permisos a nivel global en la base de datos actual (el primer 
+						parámetro debe ser NULL).
+		* 'SERVER': Se usa para revisar los permisos sobre toda la instancia de SQL Server (el primer parámetro
+						debe ser NULL).
+		* 'SCHEMA': Se usa para revisar permisos sobre un esquema completo (Ej: 'dbo').
+*/
+
+-- Al ejecutar la query, vemos como resultado que tiene:
+-- connect → significa que el usuario puede conectarse a la base de datos.
+-- los otros dos aparecen porque SQL Server moderno incluye permisos internos avanzados relacionados con el 
+-- cifrado y seguridad.
+
+-- Permisos efectivos sobre la tabla Clientes
+SELECT * 
+FROM fn_my_permissions('dbo.Clientes', 'OBJECT')
+ORDER BY permission_name;
+-- entity_name es el objeto principal, en este caso, la tabla Clientes
+-- subentity_name son los campos (columnas)
+-- permission_name es el permiso concreto (SELECT, INSERT, UPDATE, DELETE, ALTER, CONTROL, etc.)
+-- en este caso, sale vacío porque quitamos los permisos a la tabla Clientes al crear la vista.
+
+-- Permisos efectivos sobre la tabla Ventas
+SELECT * 
+FROM fn_my_permissions('dbo.Ventas', 'OBJECT')
+ORDER BY permission_name;
+
+-- Nos conectamos como sa
+-- Vamos a actuar temporalmente como el usuario vendedor_login, para mostrar qué permisos efectivos tiene sobre
+-- la tabla Clientes.
+-- Esto se usa para auditar o probar la seguridad de las bases de datos.
+-- Permite a un administrador suplantar la identidad de otro usuario de manera temporal para verificar exactamente
+-- qué acciones tiene permitidas realizar sobre un objeto específico sin necesidad de cerrar sesión ni conocer
+-- su contraseña.
+USE Comercio;
+EXECUTE AS USER = 'vendedor_login'; -- suplantación de identidad
+-- este comando cambia el contexto de seguridad de la sesión actual. A partir de esta línea, dejamos de actuar
+-- como el administrador (sa) y pasamos a tener la identidad y las limitaciones de vendedor_login. Todo lo que
+-- ejecutemos a continuación se evaluará con los permisos de ese usuario y de los roles a los que pertenezca.
+SELECT USER_NAME(); -- chequeamos con qué usuario estamos corriendo.
+SELECT * FROM fn_my_permissions('dbo.Clientes', 'OBJECT');
+-- la función del sistema fn_my_permissions devuelve una lista con todos los permisos efectivos que posee la
+-- identidad actual sobre el objeto indicado (en este caso, la tabla dbo.Clientes).
+-- El resultado devolverá una tabla con columnas como permission_name (por ejemplo: SELECT, INSERT, UPDATE).
+-- Si el usuario no tiene ningún permiso sobre la tabla, el resultado saldrá completamente vacío.
+
+REVERT;
+-- Este comando finaliza la suplantación de identidad. Devuelve la sesión a su estado original (revierte el
+-- contexto de nuevo al usuario administrador sa).
+-- Es fundamental incluirlo siempre para no quedarse atrapado con las restricciones del usuario de prueba.
+SELECT USER_NAME();
+
+/* ============================================================
+				VERIFICAR PERTENENCIA A ROLES
+   ============================================================*/
+
+-- conectados como sa
+USE Comercio;
+
+SELECT	rol.name AS rol,
+		usuario.name AS usuario
+FROM	sys.database_role_members AS drm
+JOIN	sys.database_principals AS rol on drm.role_principal_id=rol.principal_id
+JOIN	sys.database_principals AS usuario on drm.member_principal_id=usuario.principal_id
+WHERE	usuario.name = 'vendedor_login';
+-- esta consulta muestra a qué roles pertenece el usuario vendedor_login
+-- si no aparece rol_vendedor, entonces el usuario existe, pero no está dentro del rol esperado.
+
+/* ============================================================
+			VERIFICAR PERMISOS OTORGADOS O DENEGADOS
+   ============================================================*/
+
+USE Comercio;
+
+-- Esta consulta es una herramienta avanzada de auditoría de seguridad.
+-- Su objetivo es poder detectar qué permisos explícitos tienen asignados exactamente este usuario y este rol
+-- en la base de datos.
+-- A diferencia de fn_my_permissions (que muestra el resultado final combinado), esta consulta va directo a las
+-- tablas del sistema para mostrar el historial de comandos GRANT o DENY que se ejecutaron en el servidor.
+-- Esto ayuda a detectar si el usario no puede trabajar porque falta un permiso o porque hay un DENY.
+SELECT	principal.name AS principal, -- nombre del usuario o rol
+		principal.type_desc AS tipo_principal, -- descripción textual del tipo de principal de seguridad en la BD
+		permiso.state_desc AS estado_permiso, -- muestra qué acción de seguridad se aplicó (GRANT/DENY)
+		permiso.permission_name AS permiso, -- muestra la acción que se está controlando (SELECT, INSERT, etc.)
+		OBJECT_SCHEMA_NAME(permiso.major_id) AS esquema, -- la tabla de permisos guarda el ID del objeto afectado
+														 -- en una columna llamada major_id toma ese id numérico
+														 -- y lo traduce al nombre del esquema correspondiente
+		OBJECT_NAME(permiso.major_id) AS objeto -- toma el número major_id y lo traduce al nombre real de la tabla,
+												-- vista o procedimiento almacenado
+FROM	sys.database_permissions AS permiso -- tabla del sistema que guada el listado de todos los permisos otorgados
+											-- o denegados en la base de datos. Contiene los permisos explícitos
+											-- actualmente configurados para el usuario o rol indicado. No es un
+											-- historial de todo lo que pasó, sino el estado actual de permisos
+											-- otorgados o denegados.
+JOIN	sys.database_principals AS principal -- tabla en donde están los nombres de los usuarios y roles
+ON		permiso.grantee_principal_id=principal_id -- une ambas tablas cruzando el id de la entidad que recibió el
+												 -- permiso (grantee_principal_id) con el id real del usuario o
+												 -- rol (principal_id)
+WHERE	principal.name IN ('vendedor_login', 'rol_vendedor') -- filtra para que traiga solo los registros de ese
+															-- usuario y ese rol.
+ORDER BY principal.name, permiso.state_des
+
+
+
 
 
 
