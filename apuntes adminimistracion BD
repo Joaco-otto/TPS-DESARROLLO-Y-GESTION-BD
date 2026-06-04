@@ -2585,6 +2585,114 @@ WHERE	principal.name IN ('vendedor_login', 'rol_vendedor') -- filtra para que tr
 															-- usuario y ese rol.
 ORDER BY principal.name, permiso.state_des
 
+CLASE N22 
+
+
+/* ------------------------------------------------------------
+				GUÍA RÁPIDA DE DIAGNÓSTICO
+   ------------------------------------------------------------
+
+   Caso 1:
+   El usuario no puede conectarse al servidor.
+   Posible causa:
+   - login inexistente
+   - contraseña incorrecta
+   - login deshabilitado
+
+   Caso 2:
+   El usuario se conecta, pero no puede entrar a Comercio.
+   Posible causa:
+   - no existe USER en Comercio para ese login
+   - guest no está habilitado para esa base
+   - la base no está disponible
+
+   Caso 3:
+   El usuario entra a Comercio, pero no puede consultar Clientes.
+   Posible causa:
+   - falta permiso SELECT
+   - no pertenece al rol correcto
+   - hay un DENY SELECT
+
+   Caso 4:
+   El usuario puede consultar, pero no puede insertar.
+   Posible causa:
+   - falta permiso INSERT
+
+   Caso 5:
+   El usuario recibe permisos por rol, pero igual no puede hacer una acción.
+   Posible causa:
+   - existe una denegación explícita con DENY
+
+
+No todos los errores de acceso son iguales.
+
+- Si falla el inicio de sesión, es un problema de autenticación.
+- Si entra al servidor pero no a la base, puede faltar el user.
+- Si entra a la base pero no puede operar, faltan permisos.
+- Si recibe permisos por rol pero igual falla, puede existir un DENY.
+
+La solución profesional no es dar permisos de más.
+La solución profesional es diagnosticar correctamente.
+
+*/
+
+--  conectados como vendedor_login, verificamos que en la BD master, estamos como usuario guest
+-- figura como usuario invitado, porque no tiene un usuario específico creado dentro de esa base
+-- el usuario guest no tiene privilegios sobre la BD.
+SELECT
+    DB_NAME() AS BaseDeDatosActual,
+    SYSTEM_USER AS UsuarioSQL,
+    USER_NAME() AS UsuarioBD;
+
+/* ============================================================
+					TRAZABILIDAD BÁSICA
+   ============================================================
+
+La trazabilidad es la capacidad de reconstruir qué pasó.
+
+En administración de bases de datos, no alcanza con hacer cambios. También tenemos que saber:
+- qué se cambió,
+- cuándo se cambió,
+- quién lo cambió,
+- por qué se cambió,
+- cuál fue el resultado.
+
+*/
+
+/* ============================================================
+					LECTURA DEL ERROR LOG
+   ============================================================ */
+
+-- El error log de SQL Server registra eventos importantes del motor.
+-- En este ejemplo especialmente vamos a ver intentos fallidos de inicio de sesión.
+-- Esto permite diagnosticar situaciones como contraseña incorrecta, login inexistente, problemas de autenticación.
+
+-- generamos un intento fallido a propósito, intentamos una conexión con vendedor_login con una contraseña
+-- mal puesta.
+USE master;
+
+-- buscamos intentos fallidos de login en el Error Log actual
+EXEC xp_readerrorlog 0,1,N'Login Failed'; 
+-- lanza un procedimiento almacenado extendido del sistema diseñado para buscar y filtrar archivos de texto de logs
+-- 0 (número de archivo): especifica el archivo físico que vamos a abrir. El 0 es siempre el log actual activo
+-- (el que está escribiendo el contenedor Docker en este preciso instante).
+-- 1 (tipo de log): filtra para mirar el log del motor de SQL Server y no del agente
+-- N'Login failed': es el texto que queremos buscar.
+
+-- buscamos intentos fallidos relacionados con vendedor_login
+EXEC xp_readerrorlog 0, 1, N'Login failed', N'vendedor_login';
+
+
+/*
+El Error Log no registra absolutamente todo lo que pasa.
+Por ejemplo, un error de permiso al hacer SELECT, UPDATE o DELETE normalmente aparece en la pestaña Messages
+de SSMS, pero no necesariamente queda registrado en el Error Log.
+El Error Log es muy útil para revisar eventos del motor, como intentos fallidos de login.
+*/
+
+
+
+
 
 
 
