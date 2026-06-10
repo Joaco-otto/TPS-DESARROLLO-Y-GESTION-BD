@@ -2690,6 +2690,115 @@ de SSMS, pero no necesariamente queda registrado en el Error Log.
 El Error Log es muy útil para revisar eventos del motor, como intentos fallidos de login.
 */
 
+CLASE # 23
+
+/* ============================================================
+		BACKUP, RESTORE Y PLAN DE RECUPERACIÓN (DRP)
+   ============================================================*/
+
+-- Backup no significa solamente copiar archivos. Un backup es una estrategia, una política, una forma
+-- controlada de recuperación.
+-- Copiar MDF y LDF manualmente no equivale necesariamente a un backup válido.
+-- SQL Server mantiene transacciones, memoria, páginas sucias, consistencia interna. Por eso se utilizan
+-- backups realizados por el motor.
+
+/*
+=============================================
+			RECOVERY MODELS
+============================================= 
+*/
+
+/*
+SQL Server NO escribe directamente todo al MDF inmediatamente.
+Cuando ocurre una operación de INSERT, UPDATE o DELETE.
+Primero registra la transacción en el log (.ldf).
+Después eventualmente los datos terminan persistidos en el MDF.
+El log permite:
+- rollback
+- recovery
+- consistencia
+- restauración
+- reconstrucción tras fallas
+
+El recovery model define cómo SQL Server administra el transaction log y qué capacidad de recuperación permite.
+
+SIMPLE RECOVERY
+SQL Server reutiliza automáticamente partes del log.
+Libera espacio lógico del log más agresivamente. El espacio lógico es la capacidad de almacenamiento interna que 
+el motor de la base de datos gestiona por sí mismo, dividida en estructuras que los usuarios y las aplicaciones
+pueden ver (como tablas, índices, páginas de datos y registros) independientes de cómo se guardan físicamente 
+en el disco duro.
+
+Ventajas:
+- más simple;
+- menos crecimiento del log;
+- menos administración.
+
+Desventajas:
+- no permite backup del log;
+- mayor pérdida potencial.
+
+Ejemplo real:
+09:00 Full backup
+09:10 INSERT importante
+09:20 DELETE accidental
+
+Pprobablemente se pierdan todas las transacciones desde el último backup.
+Porque:
+- no hay backups log;
+- no se puede reconstruir exactamente el estado previo.
+
+
+FULL RECOVERY
+El log conserva más historial transaccional dentro del log.
+SQL Server NO reutiliza libremente el log hasta que se haga un backup log.
+
+Ventajas:
+- permite backups log;
+- recuperación mucho más precisa;
+- recuperación punto en el tiempo.
+
+Desventajas:
+- requiere más administración;
+- el log puede crecer mucho si no se respalda.
+*/
+
+-- consulta para ver el recovery model
+SELECT name, recovery_model_desc FROM sys.databases;
+
+-- para cambiar el recovery model
+ALTER DATABASE Comercio SET RECOVERY FULL;
+
+-- FULL BACKUP
+-- Un full backup contiene estructura, datos, metadata necesaria para recuperación. No es simplemente exportar
+-- datos. El full backup es la fotografía completa de la base de datos en un momento determinado.
+
+-- creamos una nueba base de datos
+CREATE DATABASE ComercioBackup;
+
+-- creamos una tabla
+USE ComercioBackup;
+CREATE TABLE dbo.Clientes(
+	id_cliente INT IDENTITY(1,1) NOT NULL,
+	nombre NVARCHAR(100) NOT NULL,
+	fecha_alta DATETIME2(0) NOT NULL CONSTRAINT DF_Clientes_FechaAlta DEFAULT SYSDATETIME(),
+	CONSTRAINT PK_Clientes PRIMARY KEY (id_Cliente)
+);
+
+-- insertamos datos
+INSERT INTO dbo.Clientes(nombre) VALUES
+(N'Ana'),
+(N'Carlos'),
+(N'Lucia');
+
+-- verificamos los datos ingresados
+SELECT * FROM dbo.Clientes;
+
+-- IMPORTANTE: antes de hacer un backup siempre verificar:
+-- qué base estamos usando
+-- qué datos existen
+-- qué queremos proteger
+
 
 
 
