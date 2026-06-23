@@ -2798,6 +2798,368 @@ SELECT * FROM dbo.Clientes;
 -- qué base estamos usando
 -- qué datos existen
 -- qué queremos proteger
+-- desde la GUI:
+-- clic derecho sobre la base → task → backup → destino → archivo .bak
+
+-- con código T-SQL
+BACKUP DATABASE ComercioBackup
+TO DISK = '/var/opt/mssql/backups/ComercioBackup_full.bak'
+WITH INIT, FORMAT, STATS=10;
+GO
+
+/*
+Un .bak es un archivo de backup de SQL Server. Puede contener un backup full, differential u otros conjuntos
+de backup.
+with: declara que vamos a agregar opciones o configuraciones
+init: sobreescribe el contenido del archivo si ya existe. Si no ponemos INIT, SQL Server acumula los backups, 
+uno dentro del otro en el mismo archivo, haciéndolo gigante.
+format: crea un encabezado de medios completamente nuevo en el archivo. Le da un formato limpio y desde cero
+al arhcivo de respaldo. Sirve para evitar errores si el archivo viejo estaba dañado o si pertenecía a otra BD.
+stats: muestra el progreso de la tarea en la pantalla de mensajes cada 10%. Es ideal para saber que el sistema no
+se quedó congelado en bases de datos grandes.
+*/
+
+-- Pruebas de restore
+-- Son obligatorias
+-- Porque los backups pueden corromperse, los procesos pueden fallar, las rutas pueden romperse, los discos 
+-- pueden dañarse.
+
+-- Verificamos el backup
+RESTORE VERIFYONLY
+FROM DISK = '/var/opt/mssql/backups/ComercioBackup_full.bak';
+
+-- VERIFYONLY no garantiza al 100% que el restore vaya a funcionar. Solo verifica estructura básica y 
+-- legilibilidad. Es decir, que VERIFYONLY ayuda, pero la verdadera prueba de backup es restaurar y validar datos.
+-- Una prueba real sería:
+-- 1. tomar un backup
+-- 2. restaurarlo en otra base de datos o servidor
+-- 3. ejecutar consultas de validación
+-- 4. verificar tablas críticas
+-- 5. documentar el resultado.
+
+-- simular una pérdida de datos
+DELETE FROM dbo.Clientes;
+
+-- verificamos la pérdida
+SELECT * FROM dbo.Clientes;
+
+-- RESTORE
+-- recupera información y devuelve la base a un estado anterior.
+-- Un restore puede reemplazar una base, crear otra base, recuperar parcialmente la información.
+
+-- RESTORE desde la GUI
+-- task → restore → device → selección del backup
+
+-- RESTORE en T-SQL
+USE master;
+
+-- cerramos conexiones
+-- SQL Server no restaura si la base está siendo usada.
+ALTER DATABASE ComercioBackup
+SET SINGLE_USER
+WITH ROLLBACK IMMEDIATE;
+
+RESTORE DATABASE ComercioBackup
+FROM DISK = '/var/opt/mssql/backups/ComercioBackup_full.bak'
+WITH REPLACE; -- permite sobreescribir base existente
+
+-- volvemos a MULTIUSER
+ALTER DATABASE ComercioBackup
+SET MULTI_USER;
+
+-- verificación
+USE ComercioBackup;
+
+SELECT * FROM dbo.Clientes;
+
+
+/*============================================
+	DIFFERENTIAL, LOG Y POINT IN TIME
+============================================*/
+
+-- ¿Tiene sentido hacer un backup FULL cada 5 minutos?
+-- Problemas: espacio, tiempo, I/O, impacto.
+
+-- ## DIFFERENTIAL BACKUP
+-- Guarda cambios desde el último FULL.
+-- Es como guardar únicamente lo que cambió desde la última fotografía completa.
+-- NO compara archivos completos. SQL Server mantiene información interna sobre qué páginas cambiaron desde el 
+-- último FULL.
+-- FULL backup marca el nuevo punto base. Luego cada vez que cambian páginas SQL Server sabe qué páginas 
+-- fueron modificadas desde ese FULL.
+-- El diferencial NO guarda las transacciones. Guarda las páginas modificadas desde el último FULL.
+-- Los DIFFERENTIAL NO dependen del differential anterior. TODOS dependen del último FULL.
+
+-- EJEMPLO:
+-- Domingo: FULL
+-- Lunes: DIFFERENTIAL
+-- Martes: DIFFERENTIAL
+-- Miércoles: DIFFERENTIAL
+-- Cada diferencial contiene cambios desde el FULL.
+-- El DIFF del miércoles contiene cambios desde el FULL del domingo. NO desde el diff del martes.
+-- para restaurar miércoles necesitamos: FULL domingo + DIFF miércoles
+
+-- DIFFERENTIAL BACKUP
+BACKUP DATABASE ComercioBackup
+TO DISK = '/var/opt/mssql/backups/ComercioBackup_diff.bak'
+WITH DIFFERENTIAL, INIT, STATS = 10;
+
+-- LOG BACKUP
+-- Guarda transacciones registradas en el log.
+-- Solo funciona correctamente en FULL recovery.
+-- La base debe estar en recovery model FULL si está en simple, cambiarla y hacer un backup inicial.
+
+BACKUP LOG ComercioBackup
+TO DISK = '/var/opt/mssql/backups/ComercioBackup_log_20260610_213600.trn'
+WITH INIT, STATS = 10;
+-- en los nombres se suelen incluir los timestamps para diferenciar los distintos backups de logs
+-- SQL Server copia las partes necesarias del log al archivo .trn
+-- Permite reconstruir transacciones posteriores a un backup full o differential.
+-- Marca partes del log como reutilizables.
+-- El archivo .ldf no necesariamente se achica.
+-- Pero queda espacio interno reutilizable dentro del log.
+-- Nunca se debe sobreescribir el archivo anterior. Cada log es un eslabón de una cadena, si borramos uno,
+-- la cadena se rompe y no se pueden hacer recuperaciones en el tiempo.
+-- La mejor práctica para guardar estos archivos de backup es incluir la fecha y la hora exacta en el nombre del
+-- archivo, así se guardan uno al lado del otro sin pisarse.
+
+-- Mientras más frecuente sea el backup de log, hay menos pérdida potencial y más capacidad de recuperación.
+
+-- Estrategias combinadas
+-- Tipo			Frecuencia
+-- FULL			domingo
+-- DIFFRENTIAL	cada noche
+-- LOG			cada 15 minutos
+
+-- Se busca balancear espacio, velocidad, capacidad de recuperación y tiempo de restore.
+
+-- RECUPERACIÓN DE PUNTO EN EL TIEMPO
+-- ESCENARIO
+-- 09:00 FULL
+-- 09:30 INSERT importante
+-- 10:00 DELETE accidental
+-- 10:05 detectamos el problema
+-- podemos volver a las 09:59 ??
+-- Sí! con el FULL recovery / backups logs
+
+-- Ejemplo en código:
+USE master;
+
+-- ponemos la base en SINGLE_USER para poder restaurar sin problemas
+ALTER DATABASE ComercioBackup
+SET SINGLE_USER
+WITH ROLLBACK IMMEDIATE;
+
+-- primero tenemos que restaurar el último backup full que tengamos
+RESTORE DATABASE ComercioBackup
+FROM DISK = '/var/opt/mssql/backups/ComercioBackup_full.bak'
+WITH NORECOVERY, -- NORECOVERY deja la BD en estado de espera, para poder aplicar más cambios de backup
+-- le indica al motor de la bd que el proceso de restauración aún no ha terminado.
+REPLACE; -- REPLACE permite sobreescribir la base existente durante el restore.
+GO
+
+-- después restauramos el último backup diferencial, teniendo en cuenta que se haya hecho después del full.
+RESTORE DATABASE ComercioBackup
+FROM DISK = '/var/opt/mssql/backups/ComercioBackup_diff.bak'
+WITH NORECOVERY;
+GO
+
+-- si tuviésemos varios logs antes del necesario para el punto en el tiempo, tenemos que restaurarlos a todos,
+-- uno por uno. Los backups de log deben restaurarse en orden, porque forman una cadena de transacciones.
+-- RESTORE LOG ComercioBackup
+-- FROM DISK = '/var/opt/mssql/backups/ComercioBackup_log_20260610_200000.trn'
+-- WITH NORECOVERY; → se mantiene el NORECOVERY hasta que restauremos el último log
+
+-- restauramos el último backup de log que tengamos, asegurándonos de tenga el contenido del punto a tiempo
+-- que estamos buscando restaurar.
+RESTORE LOG ComercioBackup
+FROM DISK = '/var/opt/mssql/backups/ComercioBackup_log_20260610_213600.trn'
+WITH STOPAT = '2026-06-11T01:00:00', -- fecha y hora exacta de la que queremos el backup
+	 RECOVERY; -- implícitamente le decimos que hemos terminado el proceso de backup y que ya podemos volver
+	 -- a utilizar la base.
+-- cuando hacemos un backup con NORECOVERY, SQL Server bloquea la base temporalmente para que ningún usuario pueda
+-- entrar, mostrando la etiqueta (Restoring...) o (En restauración...) al lado de su nombre. Si en el último
+-- backup (el último log) no ponemos NORECOVERY, la base de datos se quedará bloqueada para siempre en estado
+-- Restoring... y ninguna aplicación ni usuario podrá conectarse a ella.
+
+-- Si olvidamos poner el RECOVERY en el último paso:
+ -- RESTORE DATABASE ComercioBackup WITH RECOVERY;
+
+ALTER DATABASE ComercioBackup
+SET MULTI_USER;
+
+-- SQL Server, puede reconstruir el estado anterior usando las transacciones del log
+
+RESTORE HEADERONLY
+FROM DISK = '/var/opt/mssql/backups/ComercioBackup_diff.bak';
+-- chequeamos la fecha y hora contemplada en el archivo diferencial
+
+-- La frecuencia depende de criticidad, pérdida tolerable, tamaño y operación.
+
+------------------------------------------------------------------------------------------------------------
+
+/*
+====================================
+    RECUPERACIÓN LÓGICA
+====================================
+*/
+
+-- Restore no siempre significa volver todo hacia atrás.
+-- Muchas veces NO queremos restaurar producción completa.
+-- Queremos recuperar registros puntuales.
+-- Por ejemplo: Un usuario borró 10 clientes. No queremos destruir la BD de producción.
+-- Queremos recuperar solo esos registros.
+-- SQL Server NO hace backup de registros individuales.
+-- SQL Server respalda base, archivos, grupos de archivos,log. NO respalda solo algunas filas.
+-- Para recuperar algunos registros puntuales, hacemos una recuperación lógica.
+-- Flujo real: restaurar backup completo a otra base → extraer registros → volver a insertarlos.
+-- NO hacemos el backup de las filas. Hacemos una recuperación selectiva DESPUÉS del restore.
+
+
+-- RESTORE A OTRA BASE
+-- Sirve para pruebas, validación, auditoría, comparación, recuperación lógica, análisis.
+
+-- desde base master
+RESTORE FILELISTONLY
+FROM DISK = '/var/opt/mssql/backups/ComercioBackup_full.bak';
+GO
+-- RESTORE FILELISTONLY es un comando de SQL Server que permite mirar dentro de un archivo de backup (.bak) antes de 
+-- restaurarlo.
+-- Sirve para ver la lista completa de los archivos físicos originales (el archivo de datos .mdf y el archivo de log .ldf) 
+-- que componen esa base de datos, junto con sus tamaños y ubicaciones originales.
+-- Su uso es indispensable en dos situaciones:
+-- * Saber el tamaño antes de restaurar → informa cuánto va a pesar la base de datos una vez restaurada, permitiendo 
+-- verificar si hay suficiente espacio libre en disco duro.
+-- * Restaurar con un nombre diferente o en otra ruta: Si traemos el backup de otra computadora (o del servidor de producción 
+-- a la máquina local) donde las carpetas no se llaman igual, necesitamos saber los nombres lógicos de los archivos para 
+-- poder usar la cláusula WITH MOVE.
+-- Las columnas que debemos ver:
+-- * LogicalName (Nombre Lógico): es el nombre interno que SQL Server le da al archivo (por ejemplo, ComercioBackup y 
+-- ComercioBackup_log). Lo necesitamos obligatoriamente si vamos a mover los archivos de lugar.
+-- * PhysicalName (Ruta Física original): muestra dónde estaba guardado originalmente ese archivo en el servidor donde se 
+-- tomó el backup (ej. C:\Program Files\...\Comercio.mdf).
+-- * Size (Tamaño): El tamaño exacto en bytes de la base de datos, lo que ayuda a calcular el espacio físico que se necesita.
+
+
+RESTORE DATABASE ComercioBackup_Recuperacion -- crea la base de datos en el momento, no hace falta crearla antes
+FROM DISK = '/var/opt/mssql/backups/ComercioBackup_full.bak'
+WITH
+    MOVE 'ComercioBackup' -- recibe el nombre lógico del archivo almacenado dentro del backup.
+        TO '/var/opt/mssql/data/ComercioBackup_Recuperacion.mdf', -- indica la nueva ruta física donde SQL Server creará el MDF o LDF restaurado.
+    MOVE 'ComercioBackup_log'
+        TO '/var/opt/mssql/data/ComercioBackup_Recuperacion_log.ldf',
+    RECOVERY,
+    STATS = 10;
+GO
+-- MOVE permite cambiar ubicación física, evitar conflicto con archivos existentes.
+
+use ComercioBackup_Recuperacion;
+
+select * from Clientes;
+
+-- RECUPERACIÓN LÓGICA SIMPLE
+-- Simulamos una pérdida de datos para realizar la prueba
+USE ComercioBackup;
+GO
+
+insert into Clientes values
+('Nicolas', getdate()),
+('Facundo', getdate()),
+('Federico', getdate()),
+('Jorge', getdate());
+
+select * from Clientes;
+delete from Clientes where id_cliente in (2, 3, 1003);
+
+SET IDENTITY_INSERT ComercioBackup.dbo.Clientes ON;
+INSERT INTO ComercioBackup.dbo.Clientes 
+(
+    id_cliente,
+    nombre,
+    fecha_alta
+)
+SELECT
+    id_cliente,
+    nombre,
+    fecha_alta
+FROM ComercioBackup_Recuperacion.dbo.Clientes
+WHERE id_cliente in (2, 3, 1003);
+SET IDENTITY_INSERT ComercioBackup.dbo.Clientes OFF;
+GO
+-- A nivel profesional NO se usa * en un INSERT.
+-- Aunque parezca cómodo, es mala práctica porque depende del orden físico de las columnas. Si mañana cambia la tabla, 
+-- agregan una columna o cambia el orden, puedes insertar mal los datos.
+-- Mejor siempre declarar columnas explícitamente.
+
+-- Esto es simplificado. En producción se analiza, se valida, se filtran registros.
+
+-- Si intentamos insertar registros con una PK que ya existe, SQL Server va a fallar.
+-- Ejemplo:
+-- Violation of PRIMARY KEY constraint...
+-- Por eso antes conviene verificar:
+SELECT  r.*
+FROM    ComercioBackup_Recuperacion.dbo.Clientes AS r
+JOIN    ComercioBackup.dbo.Clientes AS c
+ON      c.id_cliente = r.id_cliente;
+-- Eso muestra registros que existen en ambas bases.
+
+-- Si queremos recuperar solo registros borrados
+-- Hacemos INSERT, pero filtrando los que no existen en la base original:
+SET IDENTITY_INSERT ComercioBackup.dbo.Clientes ON;
+INSERT INTO ComercioBackup.dbo.Clientes (
+    id_cliente,
+    nombre,
+    fecha_alta
+)
+SELECT  r.id_cliente,
+        r.nombre,
+        r.fecha_alta
+FROM    ComercioBackup_Recuperacion.dbo.Clientes AS r
+WHERE   r.id_cliente IN (3, 7, 12)
+AND     NOT EXISTS (
+        SELECT 1
+        FROM ComercioBackup.dbo.Clientes AS c
+        WHERE c.id_cliente = r.id_cliente
+        );
+SET IDENTITY_INSERT ComercioBackup.dbo.Clientes OFF;
+GO
+
+-- Si el registro existe pero fue modificado mal
+-- Ahí no corresponde INSERT. Corresponde UPDATE.
+-- Ejemplo: recuperar nombre desde la base restaurada:
+UPDATE c
+SET     c.nombre = r.nombre
+FROM    ComercioBackup.dbo.Clientes AS c
+JOIN    ComercioBackup_Recuperacion.dbo.Clientes AS r
+ON      r.id_cliente = c.id_cliente
+WHERE   c.id_cliente IN (3, 7, 12);
+GO
+-- Esto toma los valores correctos desde la base restaurada y pisa esos campos en la base original.
+
+-- Es muy recomendable comparar antes de modificar
+SELECT  c.id_cliente,
+        c.nombre AS nombre_actual,
+        r.nombre AS nombre_recuperado,
+        c.fecha_alta AS fecha_alta_actual,
+        r.fecha_alta AS fecha_alta_recuperado
+FROM    ComercioBackup.dbo.Clientes AS c
+JOIN    ComercioBackup_Recuperacion.dbo.Clientes AS r
+ON      r.id_cliente = c.id_cliente
+WHERE   c.id_cliente IN (3, 7, 12);
+GO
+
+-- Para una recuperación lógica real, normalmente el flujo sería:
+-- 1. Restaurar backup en otra base.
+-- 2. Comparar datos.
+-- 3. Decidir si corresponde INSERT o UPDATE.
+-- 4. Ejecutar solo sobre los registros necesarios.
+-- 5. Validar resultado.
+
+
+-- Backup de tablas específicas
+-- SQL Server NO tiene backup nativo por tabla.
+-- El motor trabaja a nivel base, archivos, log. NO a nivel tabla.
+-- Podemos resolver de la misma manera que para los registros: restaurar otra base y extraer la/s tabla/s
 
 
 
