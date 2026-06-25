@@ -3162,7 +3162,216 @@ GO
 -- Podemos resolver de la misma manera que para los registros: restaurar otra base y extraer la/s tabla/s
 
 
+CLASE #25 
+/*=============================================
+			AUTOMATIZACIONES
+  =============================================*/
 
+/*
+Automatizar es preparar una tarea para que pueda ejecutarse sola, en un momento determinado o con cierta frecuencia, sin 
+intervención manual constante.
+
+Es importante porque, reduce errores humanos, ahorra tiempo, permite tareas nocturnas, garantiza repetición consistente y 
+evita olvidos
+
+Ejemplos reales de automatización DBA:
+- Backup diario.
+- Limpieza de archivos antiguos.
+- Exportación de datos.
+- Verificación de espacio disponible.
+- Ejecución de scripts SQL.
+- Copias de seguridad programadas.
+- Pruebas periódicas de restore.
+
+Un backup manual puede servir para practicar. Pero en un entorno real, si el backup depende de que alguien se acuerde, 
+tarde o temprano va a fallar.
+
+
+# Herramientas de automatización
+
+Entorno			Herramienta
+SQL Server		SQL Server Agent
+Linux / WSL		Bash + cron
+Windows			Programador de tareas
+Docker			docker exec para ejecutar comandos dentro del contenedor
+
+docker exec permite ejecutar comandos dentro de un contenedor que ya está corriendo. Esto es clave porque SQL Server está 
+dentro del contenedor, pero la automatización puede ejecutarse desde afuera.
+
+*/
+
+
+/*=============================================
+			SQL Server Agent
+  =============================================*/
+
+-- SQL Server Agent es el servicio de SQL Server que permite automatizar tareas mediante:
+-- Jobs: tareas automatizadas.
+-- Steps: pasos dentro del job.
+-- Schedules: horarios de ejecución.
+
+-- Sirve para automatizar backups, ejecutar scripts, lanzar mantenimientos y revisar historiales de ejecución.
+
+-- Un Job puede tener:
+-- * uno o más pasos
+-- * una programación
+-- * historial de ejecución
+
+-- El Job queda guardado en SQL Server
+-- No depende de SSMS abierto, del usuario mirando, de que alguien haga clic.
+
+-- Para poder ejecutar el SQL Server Agent en Docker, tenemos que modificar el archivo yaml si vamos a utilizar compose.
+-- agregar dentro del enviroment: MSSQL_AGENT_ENABLED: true
+-- bajar compose con docker compose down y volver a levantarlo con docker compose up -d
+-- si en el Object Explorer, el SQL Server Agent aparece deshabilitado:
+-- SQL Server Agent existe dentro de la instancia, pero sus funcionalidades están deshabilitadas mediante configuración.
+-- SQL Server Agent (Agent XPs disabled) XP significa Extended Procedures (Procedimientos Extendidos).
+-- Históricamente SQL Server agrupó ciertas funcionalidades avanzadas bajo configuraciones especiales llamadas XPs.
+-- La funcionalidad de SQL Server Agent está instalada pero la configuración de Agent XPs está deshabilitada.
+-- Para habilitarla ejecutamos el siguiente código:
+
+EXEC sp_configure 'show advanced options', 1; 
+RECONFIGURE;
+-- Este comando le indica al sistema que muestre los parámetros de configuración avanzados y poco comunes del servidor (que 
+-- por defecto están ocultos).
+-- RECONFIGURE;: Aplica los cambios inmediatamente sin necesidad de reiniciar el servicio de SQL Server
+
+EXEC sp_configure 'Agent XPs', 1;
+RECONFIGURE;
+--- Este comando habilita los componentes extendidos (Extended Stored Procedures) del Agente de SQL Server 
+
+/*
+# secuencia práctica: 
+
+Un Job tiene tres componentes principales:
+1. Job → Qué tarea se ejecuta.
+2. Step → Qué código ejecuta.
+3. Schedule → Cuándo se ejecuta. Configuración de tiempo o frecuencia que define cuándo se debe ejecutar automáticamente una
+tarea
+
+SQL Server Agent → jobs → new job → nombre (Backup_Comercio_Agent) es el nombre del job/tarea
+Step → new	→ nombre (Backup full Comercio) 
+			→ tipo (Transact-SQL script (T-SQL))
+			→ comando	BACKUP DATABASE Comercio
+						TO DISK = '/var/opt/mssql/backups/comercio_agent.bak';
+Schedule → new → name (Backup cada 2 minutos)		
+
+En la ventana de schedule vemos:
+* name: nombre del schedule
+* Schedule type: tipo de la frecuencia. 
+			   Puede ser:
+			   - recurring → La tarea se ejecutará repetidamente.
+			   - One Time → Se ejecuta una sola vez.
+			   - Start automatically when SQL Server Agent starts → la tarea (Job) se ejecutará de forma automática 
+			   inmediatamente después de que el servicio del Agente SQL Server se encienda y se ponga en marcha. Es ideal 
+			   para procesos que preparan el entorno, como limpiar tablas temporales de control o iniciar procesos de 
+			   monitoreo continuo.
+			   - Start whenever CPUs become idle → solo cuando el procesador del servidor tenga un uso de trabajo muy bajo y
+			   se considere "libre". Está diseñada para ejecutar procesos pesados sin afectar el rendimiento de tus usuarios 
+			   o sistemas en producción.
+
+El SQL Server Agent arranca cuando el servicio de Windows encargado de la automatización (llamado SQLSERVERAGENT) pasa de 
+estar "Detenido" a estar "En Ejecución". 
+El Agente SQL Server es un programa independiente del motor de la base de datos; su único trabajo es vigilar el reloj y el 
+sistema para ejecutar las tareas programadas.
+El arranque del Agente SQL Server ocurre principalmente en tres situaciones:
+1- Al encender o reiniciar el servidor físico o virtual: Si el servicio está configurado en modo "Automático" (que es lo más
+común en producción), el Agente se encenderá solo cada vez que el sistema operativo Windows Server se inicie.
+2- Al iniciar manualmente el servicio: Un administrador de la base de datos puede entrar a la consola de Servicios de Windows 
+o a SQL Server Management Studio (SSMS) y hacer clic derecho en el Agente -> Iniciar (Start).
+3- Después de una caída o mantenimiento: Si el servicio se cerró por un error inesperado, un script de recuperación o una 
+actualización, volverá a ejecutar estas tareas en cuanto se restablezca y arranque de nuevo.
+
+* Enabled. Actualmente: activado. Significa que el Schedule está habilitado. Si lo destildamos, el Job existe, pero no se 
+ejecuta.
+
+* Frequency → Define cada cuánto se repetirá.
+	Occurs:
+		- Daily → todos los días
+		- Weekly → Semanal
+		- Monthly → Mensual
+
+* Recurs every → define la frecuencia exacta con la que se va a repetir dentro de un periodo de días, semanas o meses.
+
+* Daily Frequency → define cuántas veces y a qué horas se va a ejecutar dentro de los días que ya fueron seleccionados.
+
+* Summary → SQL Server genera automáticamente una descripción resumida.
+
+
+# Ejecución: 
+
+dentro de SQL Server Agent → Jobs → Backup_Comercio_Agent → click derecho → Start Job at Step
+luego → view history (y vemos las ejecuciones cada 2 minutos)
+con disable lo detenemos.
+
+
+# Para detener el job:
+
+Acción				Qué hace
+Stop Job			Intenta detener una ejecución que está corriendo ahora
+Disable Job			Deja el Job creado, pero impide futuras ejecuciones
+Disable Schedule	Deja el Job activo, pero desactiva una programación específica
+Delete Job			Borra el Job
+Delete Schedule		Borra la programación
+
+*/
+
+-- cuando vamos a ver las copias generadas, vemos que hay un solo archivo guardado. Lo que sucedió es que como el nombre del
+-- archivo es el mismo, los backups se fueron agregando dentro.
+-- Un archivo .bak puede contener varios backups dentro y luego podemos decidir cuál queremos restaurar.
+-- Si a la query que genera el backup le hubíesemos puesto WITH INIT, se sobreescribiría el archivo con cada backup y solo 
+-- guardaría el primero.
+-- Se podría rediseñar la query para que cambie el nombre en cada ejecución y eso generaría varios archivos distintos.
+
+-- con esta query verificamos que el archivo contiene varios registros de backups
+RESTORE HEADERONLY
+FROM DISK = '/var/opt/mssql/backups/comercio_agent.bak';
+
+-- cada position es un backup completo independiente
+-- si quisiéramos restaurar el backup de posición 5:
+RESTORE DATABASE Comercio_Prueba
+FROM DISK='/var/opt/mssql/backups/comercio_agent.bak'
+WITH FILE = 5,
+MOVE 'Comercio' TO '/var/opt/mssql/data/Comercio_Prueba.mdf',
+MOVE 'Comercio_log' TO '/var/opt/mssql/data/Comercio_Prueba_log.ldf';
+
+-- Consulta para ver si el Job está corriendo
+EXEC msdb.dbo.sp_help_job
+    @job_name = 'Backup_Comercio_Agent';
+-- current_execution_status → 1 = Executing / 4 = Idle. Si está en Idle, no hay nada que detener. Si el job dura muy poco, 
+-- puede aparecer con 4 momentáneamente.
+-- sp_help_job no devuelve una sola tabla: devuelve varios conjuntos de resultados.
+-- 1. Información general del Job
+-- 2. Steps del Job → La segunda grilla muestra los pasos del Job.
+-- 3. Schedules del Job → La tercera grilla muestra la programación.
+-- 4. Estado/última ejecución del Job en el servidor → La cuarta grilla muestra información de ejecución
+
+-- sp_help_job devuelve varias tablas porque un Job no es una sola cosa.
+-- Un Job tiene definición general, pasos, programación e historial/estado de ejecución.
+-- Por eso SQL Server separa la información en diferentes resultados.
+-- Para que un Job se ejecute automáticamente, deben estar habilitados tanto el Job como su Schedule.
+
+-- Para frenarlo desde SQL
+-- Deshabilitar el Job:
+USE msdb;
+GO
+
+EXEC dbo.sp_update_job
+    @job_name = 'Backup_Comercio_Agent',
+    @enabled = 0;
+GO
+
+-- Volver a habilitarlo:
+USE msdb;
+GO
+
+EXEC dbo.sp_update_job
+    @job_name = 'Backup_Comercio_Agent',
+    @enabled = 1;
+GO
+
+
+-- ---------------------------------------------------------------
 
 
 
