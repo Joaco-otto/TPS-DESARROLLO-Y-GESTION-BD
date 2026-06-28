@@ -3370,8 +3370,367 @@ EXEC dbo.sp_update_job
     @enabled = 1;
 GO
 
+Clase # 26
+/*=============================================
+		Bash
+  =============================================*/
 
--- ---------------------------------------------------------------
+/*
+Bash
+Es un intérprete de comandos de Linux.
+Permite ejecutar comandos, automatizar tareas, crear scripts, para que el sistema operativo los ejecute.
+
+Bash se puede ejecutar en:
+- Linux.
+- Servidores Linux.
+- WSL en Windows.
+- Git Bash en Windows, con algunas limitaciones.
+- Contenedores Linux.
+- Máquinas virtuales Linux.
+- Entornos cloud.
+
+Vamos a crear una automatización con Bash y cron.
+Primero tenemos que entrar en wsl de windows, para ello vamos a abrir PowerShell porque es la consola administrativa moderna
+de Windows.
+Dentro de PowerShell entramos a wsl corriendo el comando → wsl 
+Pueden suceder varias cosas:
+1- entra al subsistema de Linux sin problemas. 
+2- al no haber entrado nunca antes, tenemos que configurar el sistema con usuario y contraseña.
+3- no hay una distribución de linux instalada.
+
+Para el caso 2: ponemos de usuario: root y de password: centro8
+Para el caso 3: instalar una distribución de linux con 'wsl --install -d Ubuntu'
+Cuando Linux pide la contraseña parece que no escribe nada en pantalla. No se muestran ni asteriscos ni puntos. Es normal. 
+Hay que escribir la contraseña y presionar Enter.
+
+Hasta ahora estábamos en PowerShell de Windows. 
+Al ejecutar wsl, ingresamos a una terminal Linux que corre sobre Windows mediante WSL. 
+A partir de este momento, los comandos que ejecutemos serán comandos de Linux.
+Algunos ejemplos: 
+- echo "Hola Mundo!" → muestra un mensaje
+- date → muestra la fecha y la hora
+- ls → lista archivos
+
+Una pequeña prueba de creación y ejecución de archivo con bash:
+nano mi_script.sh → crea el archivo y lo abre para editarlo
+escribimos el siguiente código:
+#!/bin/bash
+
+echo "Inicio del proceso"
+date
+echo "Fin del proceso"
+
+El #!/bin/bash se conoce como Shebang (o sharp-bang). Es una línea especial que indica al sistema operativo qué programa 
+debe usar para interpretar y ejecutar el código del archivo.
+# (Sharp/Hash): Indica un comentario en la mayoría de los lenguajes de script.
+! (Bang): Al estar junto al #, le avisa al sistema que no es un comentario común, sino una instrucción de ejecución.
+/bin/bash: Es la ruta absoluta en el sistema hacia el ejecutable del intérprete de Bash.
+
+Guardar y cerrar el archivo presionando Ctrl + O (Enter para confirmar) y luego Ctrl + X
+
+Antes de poder ejecutarlo, hay que otorgarle permisos de archivo ejecutable al usuario:
+chmod +x mi_script.sh
+
+Para ejecutarlo desde la misma carpeta donde lo cremos: ./mi_script.sh o bash mi_script.sh
+
+
+Proceso de automatización.
+Dentro de linux:
+# 1 # 
+- Ver el contenedor corriendo: docker ps
+- Comprobamos que podemos conectarnos a sql server desde la consola:
+	docker exec -it sql_server_primero /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Password123!" -C
+- Una vez dentro: 
+	SELECT @@VERSION;
+	GO
+
+Con este primer paso buscamos validar:
+Docker funciona
+↓
+El contenedor existe
+↓
+sqlcmd existe
+↓
+Las credenciales funcionan
+↓
+Hay comunicación con SQL Server 
+
+# 2 #
+Ejecutar un backup manual.
+Antes de armar la automatización, hacemos un backup manual. Ya que si el backup falla manualmente, también va a fallar 
+automáticamente.
+Nunca deberíamos automatizar algo que no probamos manualmente.
+La secuencia correcta debería ser:
+1. Probar el comando manualmente.
+2. Confirmar que funciona.
+3. Meterlo en un script.
+4. Ejecutar el script manualmente.
+5. Recién después programarlo con cron.
+
+Para crear el backup y luego automatizar, vamos a utilizar sqlcmd. sqlcmd es una herramienta de línea de comandos para 
+conectarse a SQL Server y ejecutar instrucciones SQL.
+SSMS es cómodo para trabajar manualmente. Pero sqlcmd es útil para automatizar, porque se puede llamar desde scripts.
+En nuestro caso, tenemos SQL Server corriendo dentro de un contenedor de Docker. Para poder ejecutar el sqlcmd tenemos que 
+utilizar el docker exec.
+
+
+# Prueba de conexión con sqlcmd
+
+Probamos primero si podemos entrar al sqlcmd:
+docker exec -it sql_server_primero /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Password123!" -C
+
+docker exec → Ejecuta un comando dentro de un contenedor.
+-it Son dos opciones juntas: -i = interactive / -t = terminal.	Sirven para abrir una sesión interactiva, es decir, para 
+																poder escribir dentro de sqlcmd.
+																En una prueba manual está bien usar -it. En un script 
+																automático normalmente no hace falta usar -it.
+sql_server_primero → Es el nombre del contenedor.
+/opt/mssql-tools18/bin/sqlcmd → Es la ruta dentro del contenedor donde está el programa sqlcmd.
+-S localhost → Indica el servidor al cual se conecta sqlcmd. Como estamos ejecutando sqlcmd desde dentro del mismo 
+				contenedor, localhost apunta al SQL Server que está corriendo ahí mismo.
+-U sa → Usuario de conexión.
+-P "Password123!" → Contraseña del usuario.
+-C → Indica que se confía en el certificado del servidor.
+En entornos modernos, sqlcmd puede intentar conectarse usando cifrado. En laboratorios con certificados no configurados 
+formalmente, -C evita errores relacionados con certificados.
+
+Luego de ejecutar el comando, vemos 1> eso indica que ya estamos conectados a SQL Server desde la consola.
+Ahora escribimos select @@version GO → devuelve información de la versión del motor SQL Server.
+En una línea escribimos "SELECT @@VERSION" → enter
+En la segunda línea escribimos GO → enter. Recién ahí se manda el comando a ejecutar
+Salimos con EXIT
+
+Ahora sí probamos hacer un backup manual:
+docker exec sql_server_primero /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Password123!" -C -Q "BACKUP DATABASE Comercio TO DISK = '/var/opt/mssql/backups/comercio_manual.bak' WITH INIT"
+
+Verificamos que el archivo exista → vemos la carpeta del bind mount.
+Validamos que SQL Server pueda leer el backup y que el conjunto de backup sea válido estructuralmente
+RESTORE VERIFYONLY FROM DISK = '/var/opt/mssql/backups/comercio_manual.bak';
+RESTORE VERIFYONLY ayuda a validar el archivo, pero la prueba más fuerte sigue siendo restaurarlo en una base de prueba.
+
+Dentro de Linux (fuera del slqcmd)
+ejecutamos "pwd" Print Working Directory (Imprimir Directorio de Trabajo). Es un comando básico de Linux que muestra la ruta 
+absoluta exacta de la carpeta en la que estamos parados en ese momento dentro de la terminal.
+mkdir -p ~/scripts → creamos una carpeta llamada scripts
+cd ~/scripts → entramos a la carpeta creada
+pwd → verificamos en dónde estamos parados
+nano backup_database.sh → creamos el archivo y entramos para editarlo
+
+Nano (GNU nano) es un editor de texto para la línea de comandos en Linux.
+Comandos principales:
+| Acción                    | Atajo    |
+| ------------------------- | -------- |
+| Guardar                   | Ctrl + O |
+| Salir                     | Ctrl + X |
+| Cortar línea              | Ctrl + K |
+| Pegar línea               | Ctrl + U |
+| Marcar texto              | Alt + A  |
+| Deshacer                  | Alt + U  |
+| Rehacer                   | Alt + E  |
+| Recuperar nano suspendido | fg       |
+
+Contenido del script:
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+#!/bin/bash
+
+# Datos principales de configuración
+CONTENEDOR="sql_server_primero"
+BASE="Comercio"
+PASSWORD="Password123!"
+
+FECHA=$(date +%Y%m%d_%H%M%S)
+NOMBRE_BACKUP="${BASE}_${FECHA}.bak"
+RUTA_BACKUP="/var/opt/mssql/backups/$NOMBRE_BACKUP"
+LOG="$HOME/scripts/backup_${BASE}.log"
+
+echo "======================================" | tee -a "$LOG"
+echo "Iniciando backup..."
+echo "Base: $BASE" | tee -a "$LOG"
+echo "Inicio del backup: $(date)" >> "$LOG"
+echo "Archivo a generar: $NOMBRE_BACKUP" | tee -a "$LOG"
+
+docker exec "$CONTENEDOR" /opt/mssql-tools18/bin/sqlcmd \
+-S localhost \
+-U sa \
+-P "$PASSWORD" \
+-C \
+-Q "BACKUP DATABASE [$BASE] TO DISK = '$RUTA_BACKUP' WITH INIT" 2>&1 >> "$LOG"
+
+# Verificamos si el comando anterior terminó correctamente
+if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    echo "Backup realizado correctamente." | tee -a "$LOG"
+else
+    echo "ERROR: el backup falló. Revisar mensajes anteriores." | tee -a "$LOG"
+fi
+
+echo "Fin del backup: $(date)" | tee -a "$LOG"
+echo "======================================" | tee -a "$LOG"
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+
+FECHA=$(date +%Y%m%d_%H%M%S)
+Obtiene la fecha y hora actual del sistema.
+Formato:
+%Y = año (2026)
+%m = mes (06)
+%d = día (14)
+%H = hora (23)
+%M = minuto (45)
+%S = segundo (30)
+Ejemplo de resultado:
+20260614_234530
+
+NOMBRE_BACKUP="Comercio_$FECHA.bak"
+Construye el nombre del archivo de backup utilizando la fecha generada.
+Esto evita que cada ejecución sobrescriba el backup anterior.
+Ejemplo:
+Comercio_20260614_234530.bak
+
+RUTA_BACKUP="/var/opt/mssql/backups/$NOMBRE_BACKUP"
+Construye la ruta completa donde se guardará el backup dentro del contenedor.
+La carpeta /var/opt/mssql/backups está asociada mediante un bind mount a una carpeta de Windows, por lo que el archivo 
+también quedará disponible desde el sistema operativo anfitrión.
+Ejemplo:
+/var/opt/mssql/backups/Comercio_20260614_234530.bak
+
+LOG="$HOME/scripts/backup_comercio.log"
+Define la ruta donde se guardará el archivo de log del script, no el backup. Este log queda en el sistema Linux/WSL, junto 
+al script.
+Usa una variable de entorno de Linux.
+$HOME apunta automáticamente al directorio personal del usuario actual.
+En una automatización real no alcanza con que algo se ejecute. También necesitamos saber qué pasó cuando se ejecutó.
+
+>> "$LOG"
+Agregar contenido al final de un archivo.
+
+| tee -a "$LOG"
+El operador | (pipe o tubería) toma la salida de un comando y la envía como entrada a otro comando.
+El comando tee permite mostrar información en pantalla y guardarla al mismo tiempo en un archivo.
+La opción -a indica que el contenido debe agregarse al final sin borrar lo anterior.
+
+2>&1
+La redirección 2>&1 hace que los mensajes de error se traten igual que los mensajes normales, permitiendo que también queden 
+registrados en el log.
+
+Verificación de éxito o error
+Luego de ejecutar el backup, queremos saber si SQL Server informó que la operación terminó correctamente o si ocurrió algún 
+error.
+Un if es una estructura de control que permite tomar decisiones. Su funcionamiento es similar a otros lenguajes de programación.
+Cuando Bash ejecuta un comando, éste devuelve un código de salida. Normalmente: 0 = Éxito / Distinto de 0 = Error
+PIPESTATUS[0] representa el código de salida del comando docker exec. Que es justamente el comando que ejecuta el backup. 
+Es el resultado que realmente nos interesa verificar.
+-eq significa "igual"
+Cuando SQL Server termina el backup devuelve un código de resultado. El valor 0 significa que todo salió bien. Cualquier 
+otro valor indica algún problema. 
+El script verifica ese resultado y muestra un mensaje diferente según el backup haya sido exitoso o no.
+
+explorer.exe . → abre el explorador de windows en la carpeta en donde se encuentra el script. Sirve para poder acceder al 
+archivo y compartirlo, por ejemplo.
+
+*/
+
+RESTORE VERIFYONLY FROM DISK = '/var/opt/mssql/backups/comercio_manual.bak';
+
+
+/*=============================================
+		cron
+  =============================================*/
+
+/*
+
+Cron es una de las herramientas más tradicionales y utilizadas para automatizar tareas en Linux.
+Permite ejecutar comandos o scripts automáticamente en determinados momentos.
+
+Por ejemplo:
+- cada minuto
+- cada 5 minutos
+- todos los días a las 2 de la mañana
+- todos los lunes
+- de lunes a viernes
+
+En nuestro caso, vamos a usar cron para ejecutar automáticamente el script: backup_database.sh
+La idea es pasar de esto: ./backup_database.sh
+a esto: El sistema ejecuta el script automáticamente cada cierto tiempo.
+
+crontab es la tabla de tareas programadas del usuario.
+cron    → servicio que ejecuta tareas programadas
+crontab → archivo donde escribimos qué tarea se ejecuta y cuándo
+
+Cron es como una agenda o calendario de tareas.
+Cada línea representa una tarea programada.
+Si quiero agregar una tarea nueva, agrego una línea.
+Si quiero desactivar una tarea, la comento o la elimino.
+Si quiero ver todas las tareas programadas, consulto el crontab.
+
+Para editar el crontab del usuario actual: crontab -e
+Vamos a usar nano como editor.
+*/
+
+-- Sintaxis de cron
+-- Cada línea de cron tiene esta estructura: minuto hora día_del_mes mes día_de_la_semana comando
+-- Ejemplo: */2 * * * * $HOME/scripts/backup_database.sh
+
+-- Se lee así:
+-- */2  → cada 2 minutos
+-- *    → cualquier hora
+-- *    → cualquier día del mes
+-- *    → cualquier mes
+-- *    → cualquier día de la semana
+
+-- $HOME es una variable de entorno de Linux que apunta automáticamente a la carpeta personal del usuario actual.
+-- Esto permite que el mismo comando funcione para distintos usuarios sin necesidad de modificar las rutas manualmente.
+-- En entornos productivos suele recomendarse utilizar rutas absolutas completas. 
+-- Para nuestro laboratorio utilizaremos $HOME porque hace que el material sea reutilizable en cualquier máquina sin 
+-- modificar el nombre del usuario.
+
+-- Entonces:
+-- */2 * * * * $HOME/scripts/backup_database.sh
+-- significa:
+-- Ejecutar el script cada 2 minutos.
+
+-- Agregar la tarea programada
+-- Abrimos crontab: crontab -e
+-- Agregamos al final: */2 * * * * $HOME/scripts/backup_database.sh
+-- Guardamos: Ctrl + O → Enter → Ctrl + X
+
+-- Aunque nuestro script ya genera log, también podemos registrar si cron intentó ejecutarlo:
+-- */2 * * * * $HOME/scripts/backup_database.sh >> $HOME/scripts/cron_backup.log 2>&1
+-- Esto guarda en cron_backup.log los mensajes propios de la ejecución programada.
+
+-- Ver tareas programadas
+-- Para ver qué tareas tiene configuradas el usuario: crontab -l
+
+-- Eliminar o modificar una tarea
+-- Para modificar: crontab -e
+
+-- Borramos o editamos la línea correspondiente.
+-- Ejemplo, si queremos detener la automatización, eliminamos o comentamos:
+-- */2 * * * * $HOME/scripts/backup_database.sh
+
+-- También podemos comentarla con #:
+-- # */2 * * * * $HOME/scripts/backup_database.sh
+
+-- Verificar si funcionó
+-- Esperamos 2 o 3 minutos y revisamos:
+-- 1. La carpeta de backups. Desde Windows, mirar la carpeta del bind mount.
+-- O desde Linux: docker exec sql_server_primero ls -lh /var/opt/mssql/backups
+-- 2. El log del script: cat ~/scripts/backup_Comercio.log
+-- O para ver solo el final: tail ~/scripts/backup_Comercio.log
+-- 3. El log de cron, si lo usamos: cat ~/scripts/cron_backup.log
+
+-- Ejemplos útiles de cron
+-- Cada minuto: * * * * * $HOME/scripts/backup_database.sh
+-- Cada 2 minutos: */2 * * * * $HOME/scripts/backup_database.sh
+-- Cada 5 minutos: */5 * * * * $HOME/scripts/backup_database.sh
+-- Todos los días a las 2 AM: 0 2 * * * $HOME/scripts/backup_database.sh
+-- Todos los lunes a las 3 AM: 0 3 * * 1 $HOME/scripts/backup_database.sh
+-- De lunes a viernes a las 22 hs: 0 22 * * 1-5 $HOME/scripts/backup_database.sh
+
+-- IMPORTANTE: ELIMINAR O COMENTAREAR LA AUTOMATIZACIÓN DE CRON PARA QUE NO QUEDE CORRIENDO INFINITAMENTE
+
 
 
 
